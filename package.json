@@ -1,0 +1,15 @@
+{
+  "name": "large-file-viewer",
+  "main": "./lib/large-file-viewer",
+  "version": "0.1.0",
+  "description": "Open and tail files of any size.",
+  "activationEvents": [],
+  "repository": "https://github.com/mark-hahn/large-file-viewer",
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.100.0"
+  },
+  "dependencies": {
+    "fs-plus": ">2.0.0"
+  }
+}
