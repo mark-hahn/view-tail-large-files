@@ -20,7 +20,7 @@ class FileReader
   readAndIndex: (progressCB) ->
     {index, filePath, fileSize} = @
     
-    bytesReadTotal = bufPos = bufEnd = 0
+    filePos = bytesReadTotal = bufPos = bufEnd = 0
     buf = new Buffer 2 * halfBufSize
     
     fs.open filePath, 'r', (err, fd) ->
@@ -33,17 +33,18 @@ class FileReader
         loop 
           if @isDestroyed then return 'done'
           if (parts = regex.exec str)
-            bufPos += Buffer.byteLength str[strPos...regex.lastIndex]
-            strPos  = regex.lastIndex
-            index.push bufPos
-            progressCB bytesReadTotal / fileSize, index.length
-            if bufPos > halfBufSize and 
-               bytesReadTotal < fileSize then return 'read more'
+            filePos += regex.lastIndex - strPos
+            bufPos  += Buffer.byteLength str[strPos...regex.lastIndex]
+            strPos   = regex.lastIndex
+            index.push filePos
+            if bufPos > halfBufSize and bytesReadTotal < fileSize 
+              progressCB filePos / fileSize, index.length
+              return 'read more'
           else
             fs.close fd
             if bytesReadTotal isnt fileSize 
               throw new error 'line too long', filePath, bytesReadTotal, err
-            index.push fileSize
+            if filePos < fileSize then index.push fileSize
             progressCB 1, index.length
             return 'done'
         null
@@ -64,17 +65,22 @@ class FileReader
             bufEnd = halfBufSize + bytesRead
             if calcIndexFromBuf() is 'read more' then oneRead()
             
-            
   getLines: (start, end) ->
-    lines = []
-    buf = new Buffer 1024
+    {index} = @
+    idxLen = index.length
+    if start >= end or start >= idxLen then return []
+    end = Math.min idxLen, end
+    startOfs = index[start-1] ? 0
+    endOfs   = index[end-1]
+    bufLen   = endOfs - startOfs
+    buf = new Buffer bufLen
     fd = fs.openSync filePath, 'r'
-    for lineNum in [start ... end]
-      beg = index[lineNum-1] ? -1
-      len = index[lineNum] - beg
-      if len > (buf.length/2) then buf = new Buffer 2 * buf.length
-      fs.readSync fd, buf, 0, 
-      
+    fs.readSync fd, buf, 0, bufLen, startOfs
+    fs.close fd
+    for lineNum in [start...end]
+      cr = (if lineNum is idxLen-1 then 0 else 1)
+      lineBuf = buf.slice (index[lineNum-1] ? 0) - startOfs, (index[lineNum] - cr) - startOfs
+      lineBuf.toString()
 
   destroy: -> @isDestroyed = yes
     

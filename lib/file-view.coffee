@@ -35,15 +35,19 @@ class FileReaderView extends ScrollView
                    'file for viewing and tailing ...'
     
     @reader.readAndIndex (progress, lineCount) =>
+      @lineCount = lineCount
       nowSecs = Math.floor Date.now() / 100
       if progress isnt 1 and @lastSecs is nowSecs then return
       @lastSecs =  nowSecs
+      
       if lineCount > 1024
         $lineCount.text 'Lines Indexed: ' + Math.floor(lineCount/1024) + 'K'
       $progBar.css left: -((1 - progress) * 200)
       if progress is 1
         $intro.hide()
         $scroll.show()
+        lines = @reader.getLines(0,10)
+        for line in lines then console.log line
   
   afterAttach: (onDom) -> 
     if not onDom then return
