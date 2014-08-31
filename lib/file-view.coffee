@@ -30,15 +30,20 @@ class FileReaderView extends ScrollView
     $lineCount = @find '.line-count'
     $scroll    = @find '.outer-scroll-div'
     
-    $introHdr.text 'Opening large file (' +  @reader.getSize() + ') as read-only ...'
+    $introHdr.text 'Opening ' +
+                   (@reader.getFileSize() / (1024*1024)).toFixed(1) + ' MB ' + 
+                   'file for viewing and tailing ...'
     
-    @reader.readAndIndex (progress, lineCount) ->
+    @reader.readAndIndex (progress, lineCount) =>
+      nowSecs = Math.floor Date.now() / 100
+      if progress isnt 1 and @lastSecs is nowSecs then return
+      @lastSecs =  nowSecs
       if lineCount > 1024
         $lineCount.text 'Lines Indexed: ' + Math.floor(lineCount/1024) + 'K'
       $progBar.css left: -((1 - progress) * 200)
-      # if progress is 1
-      #   $intro.hide()
-      #   $scroll.show()
+      if progress is 1
+        $intro.hide()
+        $scroll.show()
   
   afterAttach: (onDom) -> 
     if not onDom then return

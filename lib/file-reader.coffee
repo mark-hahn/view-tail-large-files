@@ -11,14 +11,11 @@ module.exports =
 class FileReader
   
   constructor: (@filePath, @fileSize) ->
-    @totalLines = 0
     @index = []
 
   getViewClass: -> View
-    
-  getTitle: -> '^' + path.basename @filePath
-  
-  getSize: -> (@fileSize / (1024*1024)).toFixed(1) + ' MB'
+  getTitle:     -> '^' + path.basename @filePath
+  getFileSize:  -> @fileSize
   
   readAndIndex: (progressCB) ->
     {index, filePath, fileSize} = @
