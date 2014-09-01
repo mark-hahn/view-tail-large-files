@@ -1,6 +1,7 @@
 
 # lib\file-view.coffee
 
+fs = require 'fs-plus'
 {ScrollView} = require 'atom'
 
 module.exports =
@@ -29,6 +30,7 @@ class FileReaderView extends ScrollView
     $progBar   = @find '.progress-bar-inner'
     $lineCount = @find '.line-count'
     $scroll    = @find '.outer-scroll-div'
+    @filePath  = @reader.getFilePath()
     
     $introHdr.text 'Opening ' +
                    (@reader.getFileSize() / (1024*1024)).toFixed(1) + ' MB ' + 
@@ -46,7 +48,16 @@ class FileReaderView extends ScrollView
       if progress is 1
         $intro.hide()
         $scroll.show()
-        lines = @reader.getLines(0,10)
+        
+        if not @watch
+          @watch = => 
+            @reader.readAndIndex (progress, lineCount) =>
+              lines = @reader.getLines(@lineCount, lineCount)
+              for line in lines then console.log line
+              @lineCount = lineCount
+          fs.watch @filePath, persistent: no, @watch
+
+        lines = @reader.getLines(@lineCount-10, @lineCount)
         for line in lines then console.log line
   
   afterAttach: (onDom) -> 
@@ -54,5 +65,8 @@ class FileReaderView extends ScrollView
     
   getPane: -> @parents('.pane').view()
      
-  destroy: -> @reader?.destroy()
+  destroy: -> 
+    @reader?.destroy()
+    if @watch then fs.unwatchFile @filePath, @watch
+    
 

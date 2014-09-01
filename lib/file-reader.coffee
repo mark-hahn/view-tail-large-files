@@ -12,15 +12,23 @@ class FileReader
   
   constructor: (@filePath, @fileSize) ->
     @index = []
+    @watcher = null
+    console.log 'constructor', {@filePath, @fileSize}
 
   getViewClass: -> View
-  getTitle:     -> '^' + path.basename @filePath
+  getFilePath:  -> @filePath
   getFileSize:  -> @fileSize
+  getTitle:     -> '^' + path.basename @filePath
   
   readAndIndex: (progressCB) ->
-    {index, filePath, fileSize} = @
+    {index, filePath, fileSize} = thisReadAndIndex = @
     
-    filePos = bytesReadTotal = bufPos = bufEnd = 0
+    filePos  = bytesReadTotal = bufPos = bufEnd = 0
+    if index.length > 0
+      filePos  = bytesReadTotal = fileSize
+      fileSize = @fileSize = fs.getSizeSync filePath
+    
+    bufPos = bufEnd = 0
     buf = new Buffer 2 * halfBufSize
     
     fs.open filePath, 'r', (err, fd) ->
@@ -38,20 +46,20 @@ class FileReader
             strPos   = regex.lastIndex
             index.push filePos
             if bufPos > halfBufSize and bytesReadTotal < fileSize 
-              progressCB filePos / fileSize, index.length
+              progressCB? filePos / fileSize, index.length
               return 'read more'
           else
             fs.close fd
             if bytesReadTotal isnt fileSize 
-              throw new error 'line too long', filePath, bytesReadTotal, err
+              throw new error 'line too long', filePath, bytesReadTotal
             if filePos < fileSize then index.push fileSize
-            progressCB 1, index.length
+            progressCB? 1, index.length
             return 'done'
         null
            
-      fs.read fd, buf, 0, 2 * halfBufSize, null, (err, bytesRead) ->
+      fs.read fd, buf, 0, 2 * halfBufSize, bytesReadTotal, (err, bytesRead) ->
         if err then throw new error 'error in first read of long file', filePath, err
-        bytesReadTotal = bufEnd = bytesRead
+        bytesReadTotal += (bufEnd = bytesRead)
         if calcIndexFromBuf() is 'done' then return
         
         do oneRead = ->
@@ -59,7 +67,7 @@ class FileReader
           bufPos -= halfBufSize
           bufEnd  = halfBufSize
           
-          fs.read fd, buf, halfBufSize, halfBufSize, null, (err, bytesRead) ->
+          fs.read fd, buf, halfBufSize, halfBufSize, bytesReadTotal, (err, bytesRead) ->
             if err then throw new error 'error reading long file', filePath, pos, err
             bytesReadTotal += bytesRead
             bufEnd = halfBufSize + bytesRead
@@ -78,10 +86,10 @@ class FileReader
     fs.readSync fd, buf, 0, bufLen, startOfs
     fs.close fd
     for lineNum in [start...end]
-      cr = (if lineNum is idxLen-1 then 0 else 1)
-      lineBuf = buf.slice (index[lineNum-1] ? 0) - startOfs, (index[lineNum] - cr) - startOfs
+      lineBuf = buf.slice (index[lineNum-1] ? 0) - startOfs, index[lineNum] - 1 - startOfs
       lineBuf.toString()
 
-  destroy: -> @isDestroyed = yes
+  destroy: -> 
+    @isDestroyed = yes
     
   
