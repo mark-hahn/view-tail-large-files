@@ -1,10 +1,20 @@
 
 # lib\file-view.coffee
 
-{ScrollView} = require 'atom'
+{$, ScrollView} = require 'atom'
 
-chrW = 6
-chrH = 19
+fontFamily  = 'courier'
+fontSize    = 14
+hdrFontSize = 20
+lineCntSize = 18
+
+$testDiv = $ '<div><span>&nbsp;</span><div style="clear:both">&nbsp;</div></div>'
+$testSpan = $testDiv.find('span')
+$testSpan.css {position:'absolute', fontSize, fontFamily, visibility:'hidden'}
+$('body').append $testDiv
+chrW = $testSpan.width() - 1
+chrH = $testDiv.height() + 3
+$testDiv.remove()
 
 fs = require 'fs-plus'
 fileScroll = require './file-scroll'
@@ -13,12 +23,13 @@ module.exports =
 class FileReaderView extends ScrollView
   
   @content: ->
-    @div =>
+    @div style:'width:100%; background-color:white', =>
       
       @div class:'intro', style:'margin:30px; width:100%; height:100px', =>
-        @div class:'intro-hdr', style:'font-size:20px; font-weight:bold; margin-bottom:30px'
+        @div class:'intro-hdr', \
+             style:'font-size:' + hdrFontSize + 'px; font-weight:bold; margin-bottom:30px'
         @div class:'line-count', \
-             style:'clear:both; float:left; font-size:18px; color:black; 
+             style:'clear:both; float:left; font-size:' + lineCntSize + 'px; color:black; 
                     width:200px; height:20px', 'Lines Indexed: 0'
         @div class:'progress-bar-outer', \
              style:'position:relative; top:4px; float:left; overflow:hidden;
@@ -28,8 +39,7 @@ class FileReaderView extends ScrollView
                       width:200px; height:20px; background-color:green'
                       
       @div class:'lines', style:'display:none; background-color:white; 
-                                 font-family:courier; font-size:13px'
-                  
+                                 font-family:' + fontFamily + '; font-size:' + fontSize + 'px'
   
   initialize: (@reader) ->
     super
@@ -40,7 +50,7 @@ class FileReaderView extends ScrollView
     $lineCount = @find '.line-count'
     $lines     = @find '.lines'
     
-    fileScroll.init $lines, chrW, chrH
+    fileScroll.init $lines, chrH
 
     $introHdr.text 'Opening ' +
                    (@reader.getFileSize() / (1024*1024)).toFixed(1) + ' MB ' + 
@@ -48,7 +58,9 @@ class FileReaderView extends ScrollView
                    
     lastLineCount = 0
     newLines = (lineCount, maxLineLen) =>
-      $lines.css width: maxLineLen * chrW, height: (lineCount+1) * chrH + 10
+      lineCountStr = ' ' + lineCount
+      $lines.css width:  (lineCountStr.length + 2 + maxLineLen) * chrW, \
+                 height: (lineCount + 1) * chrH + 20
       lines = @reader.getLines lastLineCount, lineCount
       lastLineCount = lineCount
       fileScroll.addLines lines, lineCount, maxLineLen

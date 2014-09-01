@@ -4,19 +4,14 @@
 module.exports =
 class Line extends View
   
-  @content: (widthLine, widthText, top, lineNum, text, lineNumStr) ->
+  @content: (top, lineNum, lineNumStr, text) ->
     
-    @div class:"line", \
-         style: 'position:absolute; color:black;
-                 top:'   + top       + 'px;
-                 width:' + widthLine + 'px', =>
+    @div class:"line", "data-line": lineNum, \
+         style: 'position:absolute; white-space:pre; top:' + top + 'px', =>
                     
-      @div class:"line-num", \
-           style:'clear:both; float:left; margin-right:5px;
-                  background-color:#ccc', lineNumStr
+      @div class:"line-num", style:'clear:both; float:left; 
+                                    margin-right:5px; color:#aaa', lineNumStr
       
-      @div class:"line-text", \
-          "data-line": lineNum, \
-           style: 'float:left; width:' + widthText + 'px', text
+      @div class:"line-text", style:'float:left; color:black', text
 
 
