@@ -2,28 +2,27 @@
 # lib\file-view.coffee
 
 {$, ScrollView} = require 'atom'
+fs = require 'fs-plus'
+fileScroll = require './file-scroll'
 
 fontFamily  = 'courier'
 fontSize    = 14
 hdrFontSize = 20
 lineCntSize = 18
 
-$testDiv = $ '<div><span>&nbsp;</span><div style="clear:both">&nbsp;</div></div>'
-$testSpan = $testDiv.find('span')
+$testDiv  = $ '<div><span>&nbsp;</span><div style="clear:both">&nbsp;</div></div>'
+$testSpan = $testDiv.find 'span'
 $testSpan.css {position:'absolute', fontSize, fontFamily, visibility:'hidden'}
 $('body').append $testDiv
 chrW = $testSpan.width() - 1
 chrH = $testDiv.height() + 3
 $testDiv.remove()
 
-fs = require 'fs-plus'
-fileScroll = require './file-scroll'
-
 module.exports =
 class FileReaderView extends ScrollView
   
   @content: ->
-    @div style:'width:100%; background-color:white', =>
+    @div style:' overflow:scroll; background-color:white', =>
       
       @div class:'intro', style:'margin:30px; width:100%; height:100px', =>
         @div class:'intro-hdr', \
@@ -38,7 +37,7 @@ class FileReaderView extends ScrollView
                style:'position:absolute; left:-200px; top:0;
                       width:200px; height:20px; background-color:green'
                       
-      @div class:'lines', style:'display:none; background-color:white; 
+      @div class:'lines', style:'display:none; white-space:pre; 
                                  font-family:' + fontFamily + '; font-size:' + fontSize + 'px'
   
   initialize: (@reader) ->
@@ -50,20 +49,21 @@ class FileReaderView extends ScrollView
     $lineCount = @find '.line-count'
     $lines     = @find '.lines'
     
-    fileScroll.init $lines, chrH
+    fileScroll.init @reader, @, $lines, chrW, chrH
 
     $introHdr.text 'Opening ' +
                    (@reader.getFileSize() / (1024*1024)).toFixed(1) + ' MB ' + 
                    'file for viewing and tailing ...'
                    
-    lastLineCount = 0
+    lastLineNumCharCount = 0
     newLines = (lineCount, maxLineLen) =>
-      lineCountStr = ' ' + lineCount
-      $lines.css width:  (lineCountStr.length + 2 + maxLineLen) * chrW, \
-                 height: (lineCount + 1) * chrH + 20
-      lines = @reader.getLines lastLineCount, lineCount
-      lastLineCount = lineCount
-      fileScroll.addLines lines, lineCount, maxLineLen
+      lineNumCharCount = ('' + lineCount).length + 2
+      if lastLineNumCharCount isnt lineNumCharCount
+        $lines.find('.line-num').css width: lineNumCharCount * chrW
+        lastLineNumCharCount = lineNumCharCount
+      $lines.css width:  (lineNumCharCount + maxLineLen) * chrW, \
+                 height: (lineCount + 1) * chrH + 10
+      fileScroll.addLines lineCount, lineNumCharCount, maxLineLen
     
     @reader.readAndIndex (progress, lineCount, maxLineLen) =>
       if not progress? then return

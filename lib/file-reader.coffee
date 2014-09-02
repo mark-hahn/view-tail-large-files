@@ -97,7 +97,7 @@ class FileReader
     endOfs   = index[end-1]
     bufLen   = endOfs - startOfs
     buf      = new Buffer bufLen
-    fd = fs.openSync filePath, 'r'
+    fd = fs.openSync @filePath, 'r'
     fs.readSync fd, buf, 0, bufLen, startOfs
     fs.close fd
     for lineNum in [start...end]
