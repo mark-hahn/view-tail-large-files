@@ -2,11 +2,12 @@
 {$} = require 'atom'
 LineView = require './line-view'
 
+module.exports =
 class FileScroll
   
-  init: (@reader, @readerView, @$lines, @chrW, @chrH) ->
+  constructor: (@reader, @readerView, @$lines, @chrW, @chrH) ->
     @$lineByNum = {}
-    @readerView.on 'scroll', (e) => @loadNearLines()
+    @readerView.on 'scroll', => @loadNearLines()
     @readerView.on 'click', '.line', -> 
       console.log '@readerView.on click', $(@).attr 'data-line'
       false
@@ -39,7 +40,7 @@ class FileScroll
     end   = Math.min @lineCount, @botLineNum + @linesVis
     
     lines = @reader.getLines start, end
-    console.log start, end, lines.length
+    # console.log start, end, lines.length
     for line, idx in lines
       @appendLine start+idx, line
     
@@ -64,15 +65,13 @@ class FileScroll
       delete lineByNum[deadLine[0]]
       deadLine[1].remove()
       
-  scrollToLineNum: (lineNum) -> 
-    lineNum = Math.max 0, Math.min @lineCount-1, lineNum
-    @readerView.scrollTop lineNum * @chrH
-    
-  scrollRelative: (ofs) ->
-    @getScrollPos()
-    @scrollToLineNum @topLineNum + ofs
-    
-  getLineVis: -> @getScrollPos(); @linesVis
+  # scrollToLineNum: (lineNum) -> 
+  #   lineNum = Math.max 0, Math.min @lineCount-1, lineNum
+  #   @readerView.scrollTop lineNum * @chrH
+  #   
+  # scrollRelative: (ofs) ->
+  #   @getScrollPos()
+  #   @scrollToLineNum @topLineNum + ofs
+  #   
+  # getLineVis: -> @getScrollPos(); @linesVis
         
-module.exports = new FileScroll
-

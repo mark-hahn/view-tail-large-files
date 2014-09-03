@@ -16,4 +16,6 @@ class Line extends View
       @div class:"line-text", style:'float:left; color:black', text
 
 
+  destroy: ->
+    @detach()
 

@@ -3,7 +3,7 @@
 
 {$, ScrollView} = require 'atom'
 fs = require 'fs-plus'
-fileScroll = require './file-scroll'
+FileScroll = require './file-scroll'
 
 fontFamily  = 'courier'
 fontSize    = 14
@@ -45,14 +45,13 @@ class FileReaderView extends ScrollView
   initialize: (@reader) ->
     super
 
-    @filePath  = @reader.getFilePath()
-    $intro     = @find '.intro'
-    $introHdr  = @find '.intro-hdr'
-    $progBar   = @find '.progress-bar-inner'
-    $lineCount = @find '.line-count'
-    $lines     = @find '.lines'
-    
-    fileScroll.init @reader, @, $lines, chrW, chrH
+    @filePath   = @reader.getFilePath()
+    $intro      = @find '.intro'
+    $introHdr   = @find '.intro-hdr'
+    $progBar    = @find '.progress-bar-inner'
+    $lineCount  = @find '.line-count'
+    $lines      = @find '.lines'
+    @fileScroll = new FileScroll @reader, @, $lines, chrW, chrH
 
     $introHdr.text 'Opening ' +
                    (@reader.getFileSize() / (1024*1024)).toFixed(1) + ' MB ' + 
@@ -66,7 +65,7 @@ class FileReaderView extends ScrollView
         lastLineNumCharCount = lineNumCharCount
       $lines.css width:  (lineNumCharCount + maxLineLen) * chrW, \
                  height: (lineCount + 1) * chrH + 10
-      fileScroll.addLines lineCount, lineNumCharCount, maxLineLen
+      @fileScroll.addLines lineCount, lineNumCharCount, maxLineLen
     
     @reader.readAndIndex (progress, lineCount, maxLineLen) =>
       if not progress? then return
@@ -87,12 +86,12 @@ class FileReaderView extends ScrollView
           
           @watch = => 
             @reader.readAndIndex (progress, lineCount, maxLineLen) ->
-              if progress isnt 1 then return
-              newLines lineCount, maxLineLen
+              if progress is 1 then newLines lineCount, maxLineLen
               
           fs.watch @filePath, persistent: no, @watch
         , 300
-  
-  remove: -> 
+
+  destroy: ->
+    @detach()
     @reader?.destroy()
     if @watch then fs.unwatchFile @filePath, @watch
