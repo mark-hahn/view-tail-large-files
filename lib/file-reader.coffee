@@ -35,7 +35,7 @@ class FileReader
     
     fs.open filePath, 'r', (err, fd) =>
       if err 
-        throw new Error 'large-file-viewer: Error opening ' + filePath + ', ' + err.message
+        throw new Error 'view-tail-large-files: Error opening ' + filePath + ', ' + err.message
       
       calcIndexFromBuf = =>
         strPos = 0
@@ -56,7 +56,7 @@ class FileReader
           else
             if bytesReadTotal isnt fileSize 
               fs.close fd
-              throw new Error 'large-file-viewer: line too long ' + filePath + ', ' + bytesReadTotal
+              throw new Error 'view-tail-large-files: line too long ' + filePath + ', ' + bytesReadTotal
             @maxLineLen = Math.max (str.length - strPos), @maxLineLen
             if filePos < fileSize then index.push fileSize
             progressCB? 1, index.length, @maxLineLen
@@ -66,7 +66,7 @@ class FileReader
       fs.read fd, buf, 0, 2 * halfBufSize, bytesReadTotal, (err, bytesRead) =>
         if err 
           fs.close fd
-          throw new Error 'large-file-viewer: Error in first read ' + filePath + ', ' + err.message
+          throw new Error 'view-tail-large-files: Error in first read ' + filePath + ', ' + err.message
         bytesReadTotal += bytesRead
         bufEnd = bytesRead
         if calcIndexFromBuf() is 'done' then fs.close fd; return
@@ -79,7 +79,7 @@ class FileReader
           fs.read fd, buf, halfBufSize, halfBufSize, bytesReadTotal, (err, bytesRead) ->
             if err 
               fs.close fd
-              throw new Error 'large-file-viewer: Error reading ' + filePath + ', ' + 
+              throw new Error 'view-tail-large-files: Error reading ' + filePath + ', ' + 
                                bytesReadTotal + ', ' + err.message
             bytesReadTotal += bytesRead
             bufEnd = halfBufSize + bytesRead

@@ -7,8 +7,8 @@ fileScroll = require './file-scroll'
 
 fontFamily  = 'courier'
 fontSize    = 14
-hdrFontSize = 20
-lineCntSize = 18
+hdrFontSize = 16
+lineCntSize = 14
 
 $testDiv  = $ '<div><span>&nbsp;</span><div style="clear:both">&nbsp;</div></div>'
 $testSpan = $testDiv.find 'span'
@@ -22,7 +22,8 @@ module.exports =
 class FileReaderView extends ScrollView
   
   @content: ->
-    @div style:' overflow:scroll; background-color:white', =>
+    @div class:'view-tail-large-files', tabindex:-1,  \
+         style:'overflow:scroll; background-color:white', =>
       
       @div class:'intro', style:'margin:30px; width:100%; height:100px', =>
         @div class:'intro-hdr', \
@@ -37,11 +38,13 @@ class FileReaderView extends ScrollView
                style:'position:absolute; left:-200px; top:0;
                       width:200px; height:20px; background-color:green'
                       
-      @div class:'lines', style:'display:none; white-space:pre; 
-                                 font-family:' + fontFamily + '; font-size:' + fontSize + 'px'
+      @div class: 'lines', \
+           style:'display:none; white-space:pre; 
+                  font-family:' + fontFamily + '; font-size:' + fontSize + 'px'
   
   initialize: (@reader) ->
     super
+
     @filePath  = @reader.getFilePath()
     $intro     = @find '.intro'
     $introHdr  = @find '.intro-hdr'
@@ -90,14 +93,6 @@ class FileReaderView extends ScrollView
           fs.watch @filePath, persistent: no, @watch
         , 300
   
-  scrollUp:       -> fileScroll.scrollUp()
-  scrollDown:     -> fileScroll.scrollDown() 
-  pageUp:         -> fileScroll.pageUp()  
-  pageDown:       -> fileScroll.pageDown()
-  scrollToTop:    -> fileScroll.scrollToTop()
-  scrollToBottom: -> fileScroll.scrollToBottom()
-  
   remove: -> 
     @reader?.destroy()
     if @watch then fs.unwatchFile @filePath, @watch
-

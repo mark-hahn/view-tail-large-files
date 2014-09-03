@@ -1,10 +1,10 @@
 {
-  "name": "large-file-viewer",
-  "main": "./lib/large-file-viewer",
+  "name": "view-tail-large-files",
+  "main": "./lib/view-tail-large-files",
   "version": "0.1.0",
-  "description": "Open and tail files of any size.",
+  "description": "View and tail files of any size.",
   "activationEvents": [],
-  "repository": "https://github.com/mark-hahn/large-file-viewer",
+  "repository": "https://github.com/mark-hahn/view-tail-large-files",
   "license": "MIT",
   "engines": {
     "atom": ">0.100.0"
