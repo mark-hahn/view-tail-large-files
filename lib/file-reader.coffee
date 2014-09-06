@@ -1,33 +1,34 @@
 
 # lib\file-reader.coffee
 
-fs     = require 'fs-plus'
-path   = require 'path'
-View   = require './file-view'
+fs        = require 'fs-plus'
+pluginMgr = require './plugin-mgr'
+err       = pluginMgr.error
 
 bufSize = 16384
 
 module.exports =
 class FileReader
   
-  constructor: (@filePath, @fileSize) ->
+  constructor: (@filePath) ->
     @index = []
+    @fileSize = 0
     @maxLineLen = 40
-    # console.log 'constructor', {@filePath, @fileSize}
-
-  getViewClass: -> View
-  getFilePath:  -> @filePath
-  getFileSize:  -> @fileSize
-  getTitle:     -> '^' + path.basename @filePath
+ 
+  getFilePath:   -> @filePath
+  getLineCount:  -> @index.length / 2
+  getFileSize:   -> fs.getSizeSync @filePath
+  getMaxLineLen: -> @maxLineLen
   
-  readAndIndex: (progressCB) ->
-    {index, filePath, fileSize, isDestroyed} = @
+  setPlugins: (plugins, view) ->
+    @approveLine = pluginMgr.getCall plugins, 'approveLine', view
+  
+  buildIndex: (progressView, finishedCB) ->
+    {index, filePath, isDestroyed} = @
     if isDestroyed then return
     
-    filePos = bytesReadTotal = 0
-    if index.length > 0
-      filePos  = bytesReadTotal = fileSize
-      fileSize = @fileSize = fs.getSizeSync filePath
+    filePos = bytesReadTotal = @fileSize
+    @fileSize = fileSize = @getFileSize()
     
     bufPos = bufEnd = 0
     buf = new Buffer bufSize
@@ -44,7 +45,7 @@ class FileReader
           bufEnd -= bufPos
           bufPos = 0
         
-        fs.read fd, buf, bufEnd, bufSize - bufEnd, bytesReadTotal, (err, bytesRead) ->
+        fs.read fd, buf, bufEnd, bufSize - bufEnd, bytesReadTotal, (err, bytesRead) =>
           if err 
             fs.close fd
             throw new Error 'view-tail-large-files: Error reading ' + filePath + ', ' + 
@@ -55,39 +56,58 @@ class FileReader
           strPos = 0
           str = buf.toString 'utf8', bufPos, bufEnd
           regex = new RegExp '\\n', 'g'
+          
+          console.log 'regex.lastIndex', regex.lastIndex
+          
           while (parts = regex.exec str)
-            lineLenChr  = regex.lastIndex - strPos
-            @maxLineLen = Math.max lineLenChr, @maxLineLen
-            lineLenByt  = Buffer.byteLength str[strPos...regex.lastIndex]
+            lineText    = str[strPos...regex.lastIndex]
+            lineLenByt  = Buffer.byteLength lineText
             strPos      = regex.lastIndex
             filePos    += lineLenByt
             bufPos     += lineLenByt
-            index.push filePos
+            if @approveLine index.length/2, lineText
+              index.push @lastFilePos ? 0
+              index.push filePos
+              @maxLineLen = Math.max lineText.length, @maxLineLen
+            @lastFilePos = filePos
+            
           if bytesReadTotal isnt fileSize 
-            progressCB? bytesReadTotal/fileSize, index.length, @maxLineLen
+            if bufPos is 0 
+              err 'A line is too long (more than ' + bufSize + 'bytes).  ' +
+                  'The file will be truncated at line ' + index.length/2 + '.'
+              finishedCB()
+              fs.close fd
+              return
+            progressView?.setProgress bytesReadTotal/fileSize, index.length/2
             oneRead()
+            
           else
-            if filePos < fileSize then index.push fileSize
-            @maxLineLen = Math.max (str.length - strPos), @maxLineLen
-            progressCB? 1, index.length, @maxLineLen
+            if filePos < fileSize 
+              lineText = str[strPos...]
+              if @approveLine index.length/2, lineText
+                index.push @lastFilePos ? 0
+                index.push fileSize
+                @maxLineLen = Math.max lineText.length, @maxLineLen
+            progressView?.setProgress 1, index.length/2, @maxLineLen
+            finishedCB()
             fs.close fd
 
   getLines: (start, end) ->
     {index, isDestroyed} = @
     if isDestroyed then return []
     
-    idxLen = index.length
+    idxLen = index.length/2
     if start >= end or start >= idxLen then return []
     end      = Math.min idxLen, end
-    startOfs = index[start-1] ? 0
-    endOfs   = index[end-1]
+    startOfs = index[start * 2]
+    endOfs   = index[end * 2 - 1]
     bufLen   = endOfs - startOfs
     buf      = new Buffer bufLen
     fd = fs.openSync @filePath, 'r'
     fs.readSync fd, buf, 0, bufLen, startOfs
     fs.close fd
     for lineNum in [start...end]
-      buf.toString 'utf8', (index[lineNum-1] ? 0) - startOfs, index[lineNum] - 1 - startOfs
-
+      buf.toString 'utf8', index[lineNum*2] - startOfs, index[lineNum*2+1] - 1 - startOfs
+      
   destroy: -> @isDestroyed = yes
 

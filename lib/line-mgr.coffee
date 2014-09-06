@@ -1,20 +1,23 @@
 
+#  line-mgr
+
+fs  = require 'fs-plus'
 {$} = require 'atom'
-LineView = require './line-view'
+LineView   = require './line-view'
 
 module.exports =
-class FileScroll
+class LineMgr
   
-  constructor: (@reader, @readerView, @$lines, @chrW, @chrH) ->
+  constructor: (@reader, @fileView, @$lines, @chrW, @chrH) ->
+    @lastLineNumCharCount = 0
     @$lineByNum = {}
-    @readerView.on 'scroll', => @loadNearLines()
-    @readerView.on 'click', '.line', -> 
-      console.log '@readerView.on click', $(@).attr 'data-line'
+    
+    @fileView.on 'scroll', => @loadNearLines()
+    
+    @fileView.on 'click', '.line', -> 
+      console.log '@fileView.on click', $(@).attr 'data-line'
       false
     
-    # setTimeout (=> @scrollToBottom()), 2000
-    # setTimeout (=> @scrollToTop()   ), 4000
-
   appendLine: (lineNum, text) ->
     lineNumStr = '' + lineNum
     if lineNumStr of @$lineByNum then return
@@ -24,23 +27,34 @@ class FileScroll
     lineView     = new LineView top, lineW, lineNumW, lineNum, text
     @$lines.append lineView
     @$lineByNum[lineNumStr] = lineView
-    if (lineNum % 200) is 0 then @removeFarLines lineNum
+    if (lineNum % 200) is 0 then @removeFarLines()
   
-  addLines: (@lineCount, @lineNumCharCount, @maxLineLen) ->
+  updateLinesInDOM: ->
+    @lineCount  = @reader.getLineCount()
+    @maxLineLen = @reader.getMaxLineLen()
+    @lineNumCharCount = ('' + @lineCount).length + 2
+    if @lastLineNumCharCount isnt @lineNumCharCount
+      @fileView.setLineNumsWidth @lineNumCharCount
+      @lastLineNumCharCount = @lineNumCharCount
+    @fileView.setLinesContainerSize @lineNumCharCount, @lineCount, @maxLineLen
     @loadNearLines()
     
+  watchForNewLines: ->
+    @fileChanged = => 
+      @reader.buildIndex null, => @updateLinesInDOM()
+    fs.watch @fileView.getFilePath(), persistent: no, @fileChanged
+
   getScrollPos: ->
-    @topLineNum = Math.floor @readerView.scrollTop() / @chrH
-    @linesVis   = Math.floor @readerView.height()    / @chrH
+    @topLineNum = Math.floor @fileView.scrollTop() / @chrH
+    @linesVis   = Math.floor @fileView.height()    / @chrH
     @botLineNum = @topLineNum + @linesVis
     
   loadNearLines: ->
     @getScrollPos()
-    start = Math.max          0, @topLineNum - @linesVis
-    end   = Math.min @lineCount, @botLineNum + @linesVis
+    start = Math.max          0, @topLineNum - 5
+    end   = Math.min @lineCount, @botLineNum + 5
     
     lines = @reader.getLines start, end
-    # console.log start, end, lines.length
     for line, idx in lines
       @appendLine start+idx, line
     
@@ -56,9 +70,11 @@ class FileScroll
     # for line, idx in lines
     #   @appendLine minLine+idx, line
   
-  removeFarLines: (lineNum) ->
+  removeFarLines: ->
+    @getScrollPos()
+    lineNum   = @topLineNum + @linesVis / 2
     lineByNum = @$lineByNum
-    deadLines= []
+    deadLines = []
     for num, $line of lineByNum
       if (Math.abs lineNum - num) > 500 then deadLines.push [num, $line]
     for deadLine in deadLines
@@ -67,7 +83,7 @@ class FileScroll
       
   # scrollToLineNum: (lineNum) -> 
   #   lineNum = Math.max 0, Math.min @lineCount-1, lineNum
-  #   @readerView.scrollTop lineNum * @chrH
+  #   @fileView.scrollTop lineNum * @chrH
   #   
   # scrollRelative: (ofs) ->
   #   @getScrollPos()

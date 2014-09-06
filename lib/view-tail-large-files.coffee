@@ -1,23 +1,15 @@
 
-# lib\view-tail-large-files.coffee
+# lib/view-tail-large-files.coffee
 
-fs     = require 'fs-plus'
-Reader = require './file-reader'
+pluginMgr = require './plugin-mgr'
 
-class LargeFiles
-  
-  activate: ->
-    # console.log 'view-tail-large-files activated'
-    atom.workspace.registerOpener @openUri
-      
-  openUri: (@filePath, options) ->
-    size = fs.getSizeSync @filePath
-    if size >= 2 * 1048576 
-      # console.log 'view-tail-large-files opening large file:', @filePath
-      @reader = new Reader @filePath, size 
+pluginMgr.test = 'view-tail-large-files'
+
+module.exports = 
+  configDefaults:
+    selectPluginsByRegexOnFilePath: 'Example: a-plugin:\\.anExt$  another-plugin:/aFolder/'
+    automaticallyOpenFilesTooBigForAtom: yes
     
-  deactivate: -> 
-    # console.log 'view-tail-large-files deactivated', @filePath
-    @reader?.destroy()
-
-module.exports = new LargeFiles
+  activate: -> pluginMgr.activate()
+    
+  deactivate: -> pluginMgr.deactivate()
