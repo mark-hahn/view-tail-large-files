@@ -35,10 +35,13 @@ class FileView extends ScrollView
     @filePath = viewOpener.getFilePath()
     reader    = new FileReader @filePath
     @lineMgr  = new LineMgr reader, @, @$lines, chrW, chrH
-    plugins   = pluginMgr.getPlugins @filePath, @, reader, @lineMgr
-    reader.setPlugins plugins, @
+    
+    plugins = pluginMgr.getPlugins @filePath, @, reader, @lineMgr
+    reader.setPlugins   plugins, @
+    @lineMgr.setPlugins plugins, @
     
   getFilePath: -> @filePath
+  get$lines:   -> @$lines
 
   showLines: -> @$lines.show()
   

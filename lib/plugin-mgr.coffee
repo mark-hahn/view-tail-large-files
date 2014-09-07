@@ -4,16 +4,22 @@
 fs   = require 'fs-plus'
 path = require 'path'
 
-pluginPaths = fs.listSync path.join __dirname, '..', 'plugins'
-Plugins = 
-  for pluginPath in pluginPaths 
-    pluginPath = pluginPath.replace /\.coffee$|\.js$/i, ''
-    Plugin = require pluginPath
-    Plugin
+Plugins = null
+do ->
+  pluginPaths = fs.listSync path.join __dirname, '..', 'plugins'
+  Plugins = 
+    for pluginPath in pluginPaths 
+      pluginPath = pluginPath.replace /\.coffee$|\.js$/i, ''
+      Plugin = require pluginPath
+      Plugin
+      
+# values indicate whether more than one plugin may provide this method
+# if two plugins conflict, one is randomly allowed to be used
+methods =
+  includeLine: yes
+  newLines:    yes
+  scroll:      yes
     
-methodNames = ['includeLine', 'formatLine, filterLine']
-methodsWithOnePlugin = ['formatLine, filterLine']
-
 module.exports =  
   error: (msg) ->
     atom.confirm
@@ -46,19 +52,20 @@ module.exports =
       
   getPlugins: (filePath, args...) ->
     pluginsByMethodName = {}
-    for Plugin in Plugins 
-      haveInstance = no
+    for Plugin in Plugins
+      plugin = null
       if (pluginRegex = @configRegexesByPluginName[Plugin.name.toLowerCase()]) and
           pluginRegex.test filePath.replace /\\/g, '/'
-        for methodName in methodNames when Plugin[methodName]
+        for methodName, multiplePluginsOK of methods when Plugin.prototype[methodName]
           if not pluginsByMethodName[methodName]
-            plugin = new Plugin filePath, args...
+            plugin ?= new Plugin filePath, args...
             haveInstance = yes
             pluginsByMethodName[methodName] = []
-          if methodName in methodsWithOnePlugin and 
-              plugins[methodName].length is 0
+            
+          if multiplePluginsOK or plugins[methodName].length is 0
             pluginsByMethodName[methodName].push plugin
-      if Plugin.name is 'Default' and not haveInstance
+          
+      if Plugin.name is 'Default' and not plugin
         new Plugin filePath, args...
     pluginsByMethodName
     

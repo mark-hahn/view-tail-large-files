@@ -3,7 +3,8 @@
 
 fs  = require 'fs-plus'
 {$} = require 'atom'
-LineView   = require './line-view'
+LineView  = require './line-view'
+pluginMgr = require './plugin-mgr'
 
 module.exports =
 class LineMgr
@@ -11,13 +12,27 @@ class LineMgr
   constructor: (@reader, @fileView, @$lines, @chrW, @chrH) ->
     @lastLineNumCharCount = 0
     @$lineByNum = {}
-    
-    @fileView.on 'scroll', => @loadNearLines()
+
+    @fileView.on 'scroll', => 
+      @getScrollPos()
+      @loadNearLines()
+      @pluginsScroll @topLineNum, @linesVis, @botLineNum
     
     @fileView.on 'click', '.line', -> 
       console.log '@fileView.on click', $(@).attr 'data-line'
       false
+      
+  getLinesState:  -> 
+    {@view, @lineNumCharCount, @lineCount, @maxLineLen, @chrW, @chrH, }
     
+  getScroll: -> 
+    @getScrollPos()
+    {@view, @topLineNum, @linesVis, @botLineNum}
+    
+  setPlugins: (plugins, view) ->
+    @pluginsNewLines = pluginMgr.getCall plugins, 'newLines', view
+    @pluginsScroll   = pluginMgr.getCall plugins, 'scroll', view
+  
   appendLine: (lineNum, text) ->
     lineNumStr = '' + lineNum
     if lineNumStr of @$lineByNum then return
@@ -37,6 +52,8 @@ class LineMgr
       @fileView.setLineNumsWidth @lineNumCharCount
       @lastLineNumCharCount = @lineNumCharCount
     @fileView.setLinesContainerSize @lineNumCharCount, @lineCount, @maxLineLen
+    @pluginsNewLines(@lineNumCharCount, @lineCount, @maxLineLen)
+    @getScrollPos()
     @loadNearLines()
     
   watchForNewLines: ->
@@ -50,7 +67,6 @@ class LineMgr
     @botLineNum = @topLineNum + @linesVis
     
   loadNearLines: ->
-    @getScrollPos()
     start = Math.max          0, @topLineNum - 5
     end   = Math.min @lineCount, @botLineNum + 5
     
@@ -81,10 +97,10 @@ class LineMgr
       delete lineByNum[deadLine[0]]
       deadLine[1].remove()
       
-  # scrollToLineNum: (lineNum) -> 
-  #   lineNum = Math.max 0, Math.min @lineCount-1, lineNum
-  #   @fileView.scrollTop lineNum * @chrH
-  #   
+  setScrollPos: (lineNum) -> 
+    lineNum = Math.max 0, Math.min @lineCount-1, lineNum
+    @fileView.scrollTop lineNum * @chrH
+    
   # scrollRelative: (ofs) ->
   #   @getScrollPos()
   #   @scrollToLineNum @topLineNum + ofs
