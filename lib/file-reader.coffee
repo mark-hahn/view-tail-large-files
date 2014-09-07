@@ -57,8 +57,6 @@ class FileReader
           str = buf.toString 'utf8', bufPos, bufEnd
           regex = new RegExp '\\n', 'g'
           
-          console.log 'regex.lastIndex', regex.lastIndex
-          
           while (parts = regex.exec str)
             lineText    = str[strPos...regex.lastIndex]
             lineLenByt  = Buffer.byteLength lineText

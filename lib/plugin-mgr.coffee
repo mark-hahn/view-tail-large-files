@@ -42,7 +42,8 @@ module.exports =
           @configRegexesByPluginName[pluginName] = new RegExp regexStr
         catch 
           @error 'Invalid regex for plugin ' + pluginName + ' in settings.'
-      console.log 'configs', {autoOpen, @regexesStr, @configRegexesByPluginName}
+      # console.log 'configs', {autoOpen, @regexesStr, @configRegexesByPluginName}
+      
     @configRegexesByPluginName.default = /.*/
     process.nextTick =>
       for Plugin in Plugins when Plugin.name.toLowerCase() of @configRegexesByPluginName

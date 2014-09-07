@@ -9,11 +9,11 @@ class Line extends View
     @div class:"line", "data-line": lineNum, \
          style: 'position:absolute; top:' + top + 'px', =>
                     
-      @div class:"line-num", \
+      @div class:"line-num comment", \
            style:'clear:both; float:left; text-align:right;
-                  width:' + lineNumW + 'px; margin-right:10px; color:#aaa', lineNum + 1
+                  width:' + lineNumW + 'px; margin-right:10px', lineNum + 1
       
-      @div class:"line-text", style:'float:left; color:black', text
+      @div class:"line-text", style:'float:left', text
 
 
   destroy: ->

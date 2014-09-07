@@ -19,7 +19,7 @@ class LineMgr
       @pluginsScroll @topLineNum, @linesVis, @botLineNum
     
     @fileView.on 'click', '.line', -> 
-      console.log '@fileView.on click', $(@).attr 'data-line'
+      # console.log '@fileView.on click', $(@).attr 'data-line'
       false
       
   getLinesState:  -> 

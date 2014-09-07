@@ -23,8 +23,8 @@ module.exports =
 class FileView extends ScrollView
   
   @content: ->
-    @div class:'view-tail-large-files', tabindex:-1,  \
-         style:'overflow:scroll; background-color:white', =>
+    @div class:'view-tail-large-files editor-colors', tabindex:-1,  \
+         style:'overflow:scroll;', =>
       @div class: 'lines', \
            style:'display:none; white-space:pre; 
                   font-family:' + fontFamily + '; font-size:' + fontSize + 'px'
@@ -40,6 +40,11 @@ class FileView extends ScrollView
     reader.setPlugins   plugins, @
     @lineMgr.setPlugins plugins, @
     
+    atom.workspaceView.command "pane:item-removed", (e, opener, tabIdx) => 
+      if opener is viewOpener 
+        # console.log 'pane item closed, destorying reader'
+        reader.destroy()
+    
   getFilePath: -> @filePath
   get$lines:   -> @$lines
 
@@ -50,7 +55,7 @@ class FileView extends ScrollView
     
   setLinesContainerSize: (lineNumCharCount, lineCount, maxLineLen) ->
     @$lines.css width:  (lineNumCharCount + maxLineLen) * chrW, \
-                height: (lineCount + 1) * chrH + 10
+                height:  lineCount * chrH + 10
 
   destroy: ->
     @detach()
