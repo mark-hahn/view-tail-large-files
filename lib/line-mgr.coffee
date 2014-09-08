@@ -31,7 +31,7 @@ class LineMgr
     
   setPlugins: (plugins, view) ->
     @pluginsNewLines = pluginMgr.getCall plugins, 'newLines', view
-    @pluginsScroll   = pluginMgr.getCall plugins, 'scroll', view
+    @pluginsScroll   = pluginMgr.getCall plugins, 'scroll',   view
   
   appendLine: (lineNum, text) ->
     lineNumStr = '' + lineNum

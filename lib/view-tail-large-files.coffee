@@ -7,8 +7,7 @@ pluginMgr.test = 'view-tail-large-files'
 
 module.exports = 
   configDefaults:
-    selectPluginsByRegexOnFilePath: 'AutoOpen:.* tail:\\.log$'
+    selectPluginsByRegexOnFilePath: 'autoOpen:.* tail:\\.log$'
     
-  activate: -> pluginMgr.activate()
-    
+  activate:   -> pluginMgr.activate()
   deactivate: -> pluginMgr.deactivate()

@@ -17,9 +17,7 @@ do ->
   pluginPaths = fs.listSync path.join __dirname, '..', 'plugins'
   Plugins = 
     for pluginPath in pluginPaths 
-      pluginPath =  pluginPath.replace /\.coffee$|\.js$/i, ''
-      Plugin = require pluginPath
-      Plugin
+      require pluginPath.replace /\.coffee$|\.js$/i, ''
       
 module.exports =  
   error: (msg) ->
@@ -38,8 +36,7 @@ module.exports =
       if not regexStr then continue
       pluginName = pluginName.toLowerCase()
       try
-        @configRegexesByPluginName[pluginName] =
-              new RegExp regexStr.replace /[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&"
+        @configRegexesByPluginName[pluginName] = new RegExp regexStr
       catch 
         @error 'Invalid regex for plugin ' + pluginName + ' in settings.'
     process.nextTick =>
@@ -64,6 +61,7 @@ module.exports =
             pluginsByMethodName[methodName] = []
           if multiplePluginsOK or plugins[methodName].length is 0
             pluginsByMethodName[methodName].push plugin
+    # console.log 'pluginsByMethodName', pluginsByMethodName
     pluginsByMethodName
     
   getCall: (plugins, methodName, view) ->
