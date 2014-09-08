@@ -28,19 +28,22 @@ module.exports =
 
   activate: -> 
     @regexesStr =  atom.config.get 'view-tail-large-files.selectPluginsByRegexOnFilePath'
-    @configRegexesByPluginName = {}
+    @configRegexByPluginName = {}
     regex = new RegExp '(^|[\\s;,])?([^\\s;,]+):([^\\s;,]*)([\\s;,]|$)', 'g'
     while (matches = regex.exec @regexesStr)
       pluginName = matches[2]
       regexStr   = matches[3]
-      if not regexStr then continue
+      if regexStr in ['', 'off'] then continue
       pluginName = pluginName.toLowerCase()
-      try
-        @configRegexesByPluginName[pluginName] = new RegExp regexStr
-      catch 
-        @error 'Invalid regex for plugin ' + pluginName + ' in settings.'
+      @configRegexByPluginName[pluginName] = 
+        if regexStr is 'on' then 'on'
+        else
+          try
+            new RegExp regexStr
+          catch e
+            @error 'Invalid regex for plugin ' + pluginName + ' in settings.'
     process.nextTick =>
-      for Plugin in Plugins when Plugin.name.toLowerCase() of @configRegexesByPluginName
+      for Plugin in Plugins when Plugin.name.toLowerCase() of @configRegexByPluginName
         Plugin.activate?()
       
   deactivate: -> for Plugin in Plugins then Plugin.deactivate?()
@@ -49,9 +52,10 @@ module.exports =
     pluginsByMethodName = {}
     for Plugin in Plugins
       plugin = null
-      
-      if (pluginRegex = @configRegexesByPluginName[Plugin.name.toLowerCase()]) and
-          pluginRegex.test filePath.replace /\\/g, '/'
+      if not (pluginRegex = @configRegexByPluginName[Plugin.name.toLowerCase()])
+        continue
+      if pluginRegex is 'on' then continue
+      if pluginRegex.test filePath.replace /\\/g, '/'
         for methodName, multiplePluginsOK of methods when Plugin.prototype[methodName]
           if not pluginsByMethodName[methodName]
             try

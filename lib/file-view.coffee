@@ -33,25 +33,37 @@ class FileView extends ScrollView
     super
     @$lines   = @find '.lines'
     @filePath = @viewOpener.getFilePath()
-    reader    = new FileReader @filePath
-    @lineMgr  = new LineMgr reader, @, @$lines, chrW, chrH
+    @reader    = new FileReader @filePath
+    @lineMgr  = new LineMgr @reader, @, @$lines, chrW, chrH
     
     if (Plugin = @viewOpener.getCreatorPlugin()) 
-      @creatorPlugin = new Plugin @filePath, @, reader, @lineMgr, @viewOpener
+      @creatorPlugin = new Plugin @filePath, @, @reader, @lineMgr, @viewOpener
     
-    plugins = pluginMgr.getPlugins @filePath, @, reader, @lineMgr, @viewOpener
-    reader.setPlugins   plugins, @
+    plugins = pluginMgr.getPlugins @filePath, @, @reader, @lineMgr, @viewOpener
+    @reader.setPlugins   plugins, @
     @lineMgr.setPlugins plugins, @
     
     atom.workspaceView.command "pane:item-removed", (e, opener, tabIdx) => 
       if opener is @viewOpener 
-        reader.destroy()
+        @reader.destroy()
+  
+  # this is actually just a convenience routine for plugins
+  # a view shouldn't be doing things like this.
+  # there may be an api.coffee file for this stuff later   
+  # this loads a file, shows progress, and finally shows the lines in this view   
+  open: ->
+    ProgressView = require '../lib/progress-view'
+    progressView = new ProgressView @reader.getFileSize(), @
+    @reader.buildIndex progressView, =>
+      setTimeout => 
+        progressView.destroy()
+        @lineMgr.updateLinesInDOM()
+        @$lines.show()
+      , 300
     
   getFilePath: -> @filePath
   get$lines:   -> @$lines
 
-  showLines: -> @$lines.show()
-  
   setLineNumsWidth: (lineNumCharCount) ->
     @$lines.find('.line-num').css width: lineNumCharCount * chrW
     

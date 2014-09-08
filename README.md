@@ -25,7 +25,8 @@ Here are some ideas for new plug-ins. I will implement some of these myself but 
 - Bookmarks
 
 
-
+bugs:
+  going away from tab breaks tailing
 
 
 # Known Problems
