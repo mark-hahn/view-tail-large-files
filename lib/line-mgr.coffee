@@ -56,11 +56,6 @@ class LineMgr
     @getScrollPos()
     @loadNearLines()
     
-  watchForNewLines: ->
-    @fileChanged = => 
-      @reader.buildIndex null, => @updateLinesInDOM()
-    fs.watch @fileView.getFilePath(), persistent: no, @fileChanged
-
   getScrollPos: ->
     @topLineNum = Math.floor @fileView.scrollTop() / @chrH
     @linesVis   = Math.floor @fileView.height()    / @chrH

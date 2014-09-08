@@ -29,21 +29,22 @@ class FileView extends ScrollView
            style:'display:none; white-space:pre; 
                   font-family:' + fontFamily + '; font-size:' + fontSize + 'px'
   
-  initialize: (viewOpener) ->
+  initialize: (@viewOpener) ->
     super
     @$lines   = @find '.lines'
-    @filePath = viewOpener.getFilePath()
+    @filePath = @viewOpener.getFilePath()
     reader    = new FileReader @filePath
     @lineMgr  = new LineMgr reader, @, @$lines, chrW, chrH
     
-    if (Plugin = viewOpener.getPlugin()) then new Plugin @filePath, @, reader, @lineMgr
+    if (Plugin = @viewOpener.getCreatorPlugin()) 
+      @creatorPlugin = new Plugin @filePath, @, reader, @lineMgr, @viewOpener
     
-    plugins = pluginMgr.getPlugins @filePath, @, reader, @lineMgr
+    plugins = pluginMgr.getPlugins @filePath, @, reader, @lineMgr, @viewOpener
     reader.setPlugins   plugins, @
     @lineMgr.setPlugins plugins, @
     
     atom.workspaceView.command "pane:item-removed", (e, opener, tabIdx) => 
-      if opener is viewOpener 
+      if opener is @viewOpener 
         reader.destroy()
     
   getFilePath: -> @filePath
@@ -61,5 +62,6 @@ class FileView extends ScrollView
     @$lines.css               {width, height}
 
   destroy: ->
-    @detach()
+    @creatorPlugin?.destroy()
     @reader?.destroy()
+    @detach()
