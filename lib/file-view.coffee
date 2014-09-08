@@ -36,13 +36,14 @@ class FileView extends ScrollView
     reader    = new FileReader @filePath
     @lineMgr  = new LineMgr reader, @, @$lines, chrW, chrH
     
+    if (Plugin = viewOpener.getPlugin()) then new Plugin @filePath, @, reader, @lineMgr
+    
     plugins = pluginMgr.getPlugins @filePath, @, reader, @lineMgr
     reader.setPlugins   plugins, @
     @lineMgr.setPlugins plugins, @
     
     atom.workspaceView.command "pane:item-removed", (e, opener, tabIdx) => 
       if opener is viewOpener 
-        # console.log 'pane item closed, destorying reader'
         reader.destroy()
     
   getFilePath: -> @filePath
@@ -53,9 +54,11 @@ class FileView extends ScrollView
   setLineNumsWidth: (lineNumCharCount) ->
     @$lines.find('.line-num').css width: lineNumCharCount * chrW
     
-  setLinesContainerSize: (lineNumCharCount, lineCount, maxLineLen) ->
-    @$lines.css width:  (lineNumCharCount + maxLineLen) * chrW, \
-                height:  lineCount * chrH + 10
+  setLinesDivSize: (lineNumCharCount, lineCount, maxLineLen) ->
+    width  = (lineNumCharCount + maxLineLen) * chrW
+    height = lineCount * chrH + 15
+    @$lines.find('.line').css {width}
+    @$lines.css               {width, height}
 
   destroy: ->
     @detach()

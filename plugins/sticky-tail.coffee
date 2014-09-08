@@ -1,5 +1,5 @@
 
-# plugins/sticky-tail.coffee
+# plugins/sticky-tail
 
 module.exports =
 class StickyTail
@@ -7,7 +7,7 @@ class StickyTail
   constructor: (filePath, @view, @reader, @lineMgr) ->
 
   checkSticky: ->
-    if @botLineNum > @lineCount - 1
+    if @botLineNum > @lineCount
       if @view.find('.sticky-bar').length is 0
         width = @view.width()
         @view.append '<div class="sticky-bar highlight text-info" ' +

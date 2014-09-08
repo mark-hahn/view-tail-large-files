@@ -7,8 +7,7 @@ pluginMgr.test = 'view-tail-large-files'
 
 module.exports = 
   configDefaults:
-    selectPluginsByRegexOnFilePath: 'Example: a-plugin:\\.anExt$  another-plugin:/aFolder/'
-    automaticallyOpenFilesTooBigForAtom: yes
+    selectPluginsByRegexOnFilePath: 'AutoOpen:.* StickyTail:\\.log$'
     
   activate: -> pluginMgr.activate()
     

@@ -38,7 +38,7 @@ class LineMgr
     if lineNumStr of @$lineByNum then return
     top          = lineNum           * @chrH
     lineNumW     = @lineNumCharCount * @chrW
-    lineW        = lineNumW + (@maxLineLen * @chrW) + 20
+    lineW        = (@lineNumCharCount + @maxLineLen) * @chrW
     lineView     = new LineView top, lineW, lineNumW, lineNum, text
     @$lines.append lineView
     @$lineByNum[lineNumStr] = lineView
@@ -51,7 +51,7 @@ class LineMgr
     if @lastLineNumCharCount isnt @lineNumCharCount
       @fileView.setLineNumsWidth @lineNumCharCount
       @lastLineNumCharCount = @lineNumCharCount
-    @fileView.setLinesContainerSize @lineNumCharCount, @lineCount, @maxLineLen
+    @fileView.setLinesDivSize @lineNumCharCount, @lineCount, @maxLineLen
     @pluginsNewLines(@lineNumCharCount, @lineCount, @maxLineLen)
     @getScrollPos()
     @loadNearLines()
@@ -74,18 +74,6 @@ class LineMgr
     for line, idx in lines
       @appendLine start+idx, line
     
-    # minLine = Math.min()
-    # maxLine = Math.max()
-    # lineByNum = @$lineByNum
-    # for num in [start...end]
-    #   if ('' + num) not of lineByNum
-    #     minLine = Math.min minLine, num
-    #     maxLine = Math.max maxLine, num
-    # lines = @reader.getLines minLine, maxLine+1
-    # console.log minLine, maxLine, lines.length
-    # for line, idx in lines
-    #   @appendLine minLine+idx, line
-  
   removeFarLines: ->
     @getScrollPos()
     lineNum   = @topLineNum + @linesVis / 2

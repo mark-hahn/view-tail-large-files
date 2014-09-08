@@ -6,8 +6,8 @@ class Line extends View
   
   @content: (top, lineW, lineNumW, lineNum, text) ->
     
-    @div class:"line", "data-line": lineNum, \
-         style: 'position:absolute; top:' + top + 'px', =>
+    @div class:"line", 'data-line': lineNum, \
+         style: 'position:absolute; top:' + top + 'px; width:' + lineW + 'px', =>
                     
       @div class:"line-num comment", \
            style:'clear:both; float:left; text-align:right;

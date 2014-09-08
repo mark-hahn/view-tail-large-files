@@ -1,6 +1,14 @@
 
 # plugin-mgr
 
+# list of methods looked for in plugins
+# values indicate whether more than one plugin may provide this method
+# if two plugins conflict, one is randomly allowed to be used
+methods =
+  includeLine: yes
+  newLines:    yes
+  scroll:      yes
+    
 fs   = require 'fs-plus'
 path = require 'path'
 
@@ -9,17 +17,10 @@ do ->
   pluginPaths = fs.listSync path.join __dirname, '..', 'plugins'
   Plugins = 
     for pluginPath in pluginPaths 
-      pluginPath = pluginPath.replace /\.coffee$|\.js$/i, ''
+      pluginPath =  pluginPath.replace /\.coffee$|\.js$/i, ''
       Plugin = require pluginPath
       Plugin
       
-# values indicate whether more than one plugin may provide this method
-# if two plugins conflict, one is randomly allowed to be used
-methods =
-  includeLine: yes
-  newLines:    yes
-  scroll:      yes
-    
 module.exports =  
   error: (msg) ->
     atom.confirm
@@ -28,26 +29,22 @@ module.exports =
       buttons['Close']
 
   activate: -> 
-    autoOpen    = atom.config.get 'view-tail-large-files.automaticallyOpenFilesTooBigForAtom'
-    @regexesStr = atom.config.get 'view-tail-large-files.selectPluginsByRegexOnFilePath'
-    # console.log 'config', {autoOpen, @regexesStr}
-    
+    @regexesStr =  atom.config.get 'view-tail-large-files.selectPluginsByRegexOnFilePath'
     @configRegexesByPluginName = {}
-    if not /Example:/.test @regexesStr
-      for match in @regexesStr.match /(^|[\s;,])[^\s;,]+:[^\s;,]*([\s;,]|$)/i
-        [pluginName,regexStr] = match.split ':'
-        if not regexStr then continue
-        pluginName = pluginName.toLowerCase()
-        try
-          @configRegexesByPluginName[pluginName] = new RegExp regexStr
-        catch 
-          @error 'Invalid regex for plugin ' + pluginName + ' in settings.'
-      # console.log 'configs', {autoOpen, @regexesStr, @configRegexesByPluginName}
-      
-    @configRegexesByPluginName.default = /.*/
+    regex = new RegExp '(^|[\\s;,])?([^\\s;,]+):([^\\s;,]*)([\\s;,]|$)', 'g'
+    while (matches = regex.exec @regexesStr)
+      pluginName = matches[2]
+      regexStr   = matches[3]
+      if not regexStr then continue
+      pluginName = pluginName.toLowerCase()
+      try
+        @configRegexesByPluginName[pluginName] =
+              new RegExp regexStr.replace /[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&"
+      catch 
+        @error 'Invalid regex for plugin ' + pluginName + ' in settings.'
     process.nextTick =>
       for Plugin in Plugins when Plugin.name.toLowerCase() of @configRegexesByPluginName
-        Plugin.activate? autoOpen
+        Plugin.activate?()
       
   deactivate: -> for Plugin in Plugins then Plugin.deactivate?()
       
@@ -55,19 +52,18 @@ module.exports =
     pluginsByMethodName = {}
     for Plugin in Plugins
       plugin = null
+      
       if (pluginRegex = @configRegexesByPluginName[Plugin.name.toLowerCase()]) and
           pluginRegex.test filePath.replace /\\/g, '/'
         for methodName, multiplePluginsOK of methods when Plugin.prototype[methodName]
           if not pluginsByMethodName[methodName]
-            plugin ?= new Plugin filePath, args...
-            haveInstance = yes
+            try
+              plugin ?= new Plugin filePath, args...
+            catch e
+              break
             pluginsByMethodName[methodName] = []
-            
           if multiplePluginsOK or plugins[methodName].length is 0
             pluginsByMethodName[methodName].push plugin
-          
-      if Plugin.name is 'Default' and not plugin
-        new Plugin filePath, args...
     pluginsByMethodName
     
   getCall: (plugins, methodName, view) ->
