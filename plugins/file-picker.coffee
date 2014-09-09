@@ -38,7 +38,7 @@ class FilePicker
   #     filePath = 'c:\\apps\\insteon\\data\\hvac.log'
   #     atom.workspace.activePane.activateItem new ViewOpener filePath, @
   
-  # constructor: (filePath, view, reader, lineMgr, viewOpener) ->
+  # constructor: (filePath, view) ->
   #   view.open()
   
 

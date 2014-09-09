@@ -10,6 +10,7 @@
     "atom": ">0.100.0"
   },
   "dependencies": {
-    "fs-plus": ">2.0.0"
+    "fs-plus": ">2.0.0",
+    "vtlf-auto-open": "mark-hahn/vtlf-auto-open#v0.1.0"
   }
 }

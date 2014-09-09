@@ -1,13 +1,15 @@
 
 # lib/view-tail-large-files.coffee
 
-pluginMgr = require './plugin-mgr'
-
-pluginMgr.test = 'view-tail-large-files'
+pluginMgr = null
 
 module.exports = 
   configDefaults:
-    selectPluginsByRegexOnFilePath: 'autoOpen:.* tail:\\.log$'
+    selectPluginsByRegexOnFilePath: 'AutoOpen: FilePicker: tail:\.log$'
     
-  activate:   -> pluginMgr.activate()
-  deactivate: -> pluginMgr.deactivate()
+  activate:   -> 
+    pluginMgr = require './plugin-mgr'
+    pluginMgr.activate()
+    
+  deactivate: -> 
+    pluginMgr.deactivate()

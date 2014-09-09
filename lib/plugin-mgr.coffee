@@ -13,12 +13,7 @@ fs   = require 'fs-plus'
 path = require 'path'
 
 Plugins = null
-do ->
-  pluginPaths = fs.listSync path.join __dirname, '..', 'plugins'
-  Plugins = 
-    for pluginPath in pluginPaths 
-      require pluginPath.replace /\.coffee$|\.js$/i, ''
-      
+
 module.exports =  
   error: (msg) ->
     atom.confirm
@@ -27,44 +22,49 @@ module.exports =
       buttons['Close']
 
   activate: -> 
-    @regexesStr =  atom.config.get 'view-tail-large-files.selectPluginsByRegexOnFilePath'
-    @configRegexByPluginName = {}
-    regex = new RegExp '(^|[\\s;,])?([^\\s;,]+):([^\\s;,]*)([\\s;,]|$)', 'g'
-    while (matches = regex.exec @regexesStr)
-      pluginName = matches[2]
-      regexStr   = matches[3]
-      if regexStr in ['', 'off'] then continue
-      pluginName = pluginName.toLowerCase()
-      @configRegexByPluginName[pluginName] = 
-        if regexStr is 'on' then 'on'
-        else
-          try
-            new RegExp regexStr
-          catch e
-            @error 'Invalid regex for plugin ' + pluginName + ' in settings.'
-    process.nextTick =>
-      for Plugin in Plugins when Plugin.name.toLowerCase() of @configRegexByPluginName
-        Plugin.activate?()
-      
-  deactivate: -> for Plugin in Plugins then Plugin.deactivate?()
+    Plugins = {}
+    regexesStr =  atom.config.get 'view-tail-large-files.selectPluginsByRegexOnFilePath'
+    regexCfg   = new RegExp '(^|[\\s;,])?([^\\s;,]+):([^\\s;,]*)([\\s;,]|$)', 'g'
+    while (matches = regexCfg.exec regexesStr)
+      pluginNpmName =  'vtlf-' + matches[2].replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
+      regexStr = matches[3]
+      if regexStr is 'off' then continue
+      try
+        regex =
+          if regexStr is '' then ''
+          else new RegExp regexStr
+        PluginClass = require pluginNpmName
+      catch e
+        console.log 'view-tail-large-files: Unable to load plugin ' + pluginNpmName + '; ' + e.message
+        continue
+      PluginClass.name ?= pluginNpmName.replace /\W/g, ''
+      Plugins[PluginClass.name] =  {regex, PluginClass}  
+    for pluginName, plugin of Plugins then plugin.PluginClass.activate?()
+  
+  deactivate: -> 
+    for pluginName, plugin of Plugins then plugin.PluginClass.deactivate?()
       
   getPlugins: (filePath, args...) ->
     pluginsByMethodName = {}
-    for Plugin in Plugins
-      plugin = null
-      if not (pluginRegex = @configRegexByPluginName[Plugin.name.toLowerCase()])
+    for pluginName, plugin of Plugins
+      PluginClass = plugin.PluginClass
+      
+      if (pluginRegex = plugin.regex) is ''
+        new PluginClass filePath, args...
         continue
-      if pluginRegex is 'on' then continue
+        
+      pluginInst = null
       if pluginRegex.test filePath.replace /\\/g, '/'
-        for methodName, multiplePluginsOK of methods when Plugin.prototype[methodName]
+        for methodName, multiplePluginsOK of methods when PluginClass.prototype[methodName]
           if not pluginsByMethodName[methodName]
             try
-              plugin ?= new Plugin filePath, args...
+              pluginInst ?= new PluginClass filePath, args...
             catch e
               break
             pluginsByMethodName[methodName] = []
           if multiplePluginsOK or plugins[methodName].length is 0
-            pluginsByMethodName[methodName].push plugin
+            pluginsByMethodName[methodName].push pluginInst
+            
     # console.log 'pluginsByMethodName', pluginsByMethodName
     pluginsByMethodName
     

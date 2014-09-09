@@ -2,8 +2,7 @@
 # lib\file-reader.coffee
 
 fs        = require 'fs-plus'
-pluginMgr = require './plugin-mgr'
-err       = pluginMgr.error
+pluginMgr = null
 
 bufSize = 16384
 
@@ -11,6 +10,7 @@ module.exports =
 class FileReader
   
   constructor: (@filePath) ->
+    pluginMgr = require './plugin-mgr'
     @index = []
     @fileSize = 0
     @maxLineLen = 40
@@ -71,8 +71,8 @@ class FileReader
             
           if bytesReadTotal isnt fileSize 
             if bufPos is 0 
-              err 'A line is too long (more than ' + bufSize + 'bytes).  ' +
-                  'The file will be truncated at line ' + index.length/2 + '.'
+              console.log 'A line is too long (more than ' + bufSize + 'bytes).  ' +
+                          'The file will be truncated at line ' + index.length/2 + '.'
               finishedCB()
               fs.close fd
               return

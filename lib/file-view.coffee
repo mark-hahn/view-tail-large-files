@@ -1,12 +1,13 @@
 
 # lib\file-view.coffee
 
-{$, ScrollView} = require 'atom'
-pluginMgr       = require './plugin-mgr'
-LineMgr         = require './line-mgr'
-FileReader      = require './file-reader'
+console.log 'file-view', __dirname, process.cwd()
 
-pluginMgr.activate()
+{$, ScrollView} = require 'atom'
+
+pluginMgr  = null
+LineMgr    = null
+FileReader = null
 
 fontFamily  = 'courier'
 fontSize    = 14
@@ -31,6 +32,10 @@ class FileView extends ScrollView
   
   initialize: (@viewOpener) ->
     super
+    pluginMgr  = require './plugin-mgr'
+    LineMgr    = require './line-mgr'
+    FileReader = require './file-reader'
+    # pluginMgr.activate()
     @$lines   = @find '.lines'
     @filePath = @viewOpener.getFilePath()
     @reader    = new FileReader @filePath

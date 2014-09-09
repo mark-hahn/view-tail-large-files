@@ -27,9 +27,10 @@ Here are some ideas for new plug-ins. I will implement some of these myself but 
 
 bugs:
   going away from tab breaks tailing
+  double progress showing
+  
 
-
-# Known Problems
+# limitations
 
 - If you expand the pane the text lines won't expand until you scroll.
 - Line length must be under 16,384 bytes.
