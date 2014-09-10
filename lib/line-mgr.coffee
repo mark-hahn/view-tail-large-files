@@ -64,7 +64,6 @@ class LineMgr
   loadNearLines: ->
     start = Math.max          0, @topLineNum - 5
     end   = Math.min @lineCount, @botLineNum + 5
-    
     lines = @reader.getLines start, end
     for line, idx in lines
       @appendLine start+idx, line

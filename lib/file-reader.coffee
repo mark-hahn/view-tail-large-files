@@ -4,7 +4,7 @@
 fs        = require 'fs-plus'
 pluginMgr = null
 
-bufSize = 16384
+bufSize = 32768
 
 module.exports =
 class FileReader
@@ -16,7 +16,7 @@ class FileReader
     @maxLineLen = 40
  
   getFilePath:   -> @filePath
-  getLineCount:  -> @index.length / 2
+  getLineCount:  -> @index.length
   getFileSize:   -> fs.getSizeSync @filePath
   getMaxLineLen: -> @maxLineLen
   
@@ -63,49 +63,49 @@ class FileReader
             strPos      = regex.lastIndex
             filePos    += lineLenByt
             bufPos     += lineLenByt
-            if @approveLine index.length/2, lineText
-              index.push @lastFilePos ? 0
-              index.push filePos
+            if @approveLine index.length, lineText
+              index.push (filePos - (@lastFilePos ? 0)) * 0x100000000 + filePos
               @maxLineLen = Math.max lineText.length, @maxLineLen
             @lastFilePos = filePos
             
-          if bytesReadTotal isnt fileSize 
+          if bytesReadTotal < fileSize 
             if bufPos is 0 
               console.log 'A line is too long (more than ' + bufSize + 'bytes).  ' +
-                          'The file will be truncated at line ' + index.length/2 + '.'
+                          'The file will be truncated at line ' + index.length + '.'
               finishedCB()
               fs.close fd
               return
-            progressView?.setProgress bytesReadTotal/fileSize, index.length/2
+            progressView?.setProgress bytesReadTotal/fileSize, index.length
             oneRead()
             
           else
             if filePos < fileSize 
               lineText = str[strPos...]
-              if @approveLine index.length/2, lineText
-                index.push @lastFilePos ? 0
-                index.push fileSize
+              if @approveLine index.length, lineText
+                index.push (fileSize - (@lastFilePos ? 0)) * 0x100000000 + fileSize
                 @maxLineLen = Math.max lineText.length, @maxLineLen
-            progressView?.setProgress 1, index.length/2, @maxLineLen
+            progressView?.setProgress 1, index.length, @maxLineLen
             finishedCB()
             fs.close fd
-
+            
   getLines: (start, end) ->
     {index, isDestroyed} = @
     if isDestroyed then return []
     
-    idxLen = index.length/2
+    idxLen = index.length
     if start >= end or start >= idxLen then return []
-    end      = Math.min idxLen, end
-    startOfs = index[start * 2]
-    endOfs   = index[end * 2 - 1]
-    bufLen   = endOfs - startOfs
-    buf      = new Buffer bufLen
+    end       = Math.min idxLen, end
+    startOfs  = (index[start] & 0xffffffff) - Math.floor(index[start] / 0x100000000)
+    endOfs    =  index[end-1] & 0xffffffff
+    bufLen    = endOfs - startOfs
+    buf       = new Buffer bufLen
     fd = fs.openSync @filePath, 'r'
     fs.readSync fd, buf, 0, bufLen, startOfs
     fs.close fd
     for lineNum in [start...end]
-      buf.toString 'utf8', index[lineNum*2] - startOfs, index[lineNum*2+1] - 1 - startOfs
+      lineEndOfs = index[lineNum] & 0xffffffff
+      lineBegOfs = lineEndOfs - Math.floor(index[lineNum] / 0x100000000)
+      buf.toString 'utf8', lineBegOfs - startOfs, lineEndOfs - 1 - startOfs
       
   destroy: -> @isDestroyed = yes
 
