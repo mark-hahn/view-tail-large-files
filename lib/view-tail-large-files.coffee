@@ -5,7 +5,7 @@ pluginMgr = null
 
 module.exports = 
   configDefaults:
-    selectPluginsByRegexOnFilePath: 'AutoOpen: FilePicker: tail:\.log$'
+    selectPluginsByRegexOnFilePath: 'AutoOpen: FilePicker: Tail:\.log$'
     
   activate:   -> 
     pluginMgr = require './plugin-mgr'

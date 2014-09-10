@@ -41,9 +41,6 @@ class FileView extends ScrollView
     @reader    = new FileReader @filePath
     @lineMgr  = new LineMgr @reader, @, @$lines, chrW, chrH
     
-    if (Plugin = @viewOpener.getCreatorPlugin()) 
-      @creatorPlugin = new Plugin @filePath, @, @reader, @lineMgr, @viewOpener
-    
     plugins = pluginMgr.getPlugins @filePath, @, @reader, @lineMgr, @viewOpener
     @reader.setPlugins   plugins, @
     @lineMgr.setPlugins plugins, @
@@ -54,7 +51,7 @@ class FileView extends ScrollView
   
   # this is actually just a convenience routine for plugins
   # a view shouldn't be doing things like this.
-  # there may be an api.coffee file for this stuff later   
+  # there may be an api file for this stuff later   
   # this loads a file, shows progress, and finally shows the lines in this view   
   open: ->
     ProgressView = require '../lib/progress-view'
@@ -79,6 +76,6 @@ class FileView extends ScrollView
     @$lines.css               {width, height}
 
   destroy: ->
-    @creatorPlugin?.destroy()
+    @viewOpener.getCreatorPlugin()?.destroy()
     @reader?.destroy()
     @detach()

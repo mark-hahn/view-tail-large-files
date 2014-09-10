@@ -39,7 +39,7 @@ module.exports =
         continue
       PluginClass.name ?= pluginNpmName.replace /\W/g, ''
       Plugins[PluginClass.name] =  {regex, PluginClass}  
-    for pluginName, plugin of Plugins then plugin.PluginClass.activate?()
+    for pluginName, plugin of Plugins then plugin.PluginClass.activate? __dirname + '/'
   
   deactivate: -> 
     for pluginName, plugin of Plugins then plugin.PluginClass.deactivate?()
