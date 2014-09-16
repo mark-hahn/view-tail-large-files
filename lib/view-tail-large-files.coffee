@@ -1,15 +1,20 @@
 
 # lib/view-tail-large-files.coffee
 
-pluginMgr = null
-
-module.exports = 
+class ViewTailLargeFiles
+  
   configDefaults:
     selectPluginsByRegexOnFilePath: 'AutoOpen: FilePicker: Tail:\.log$'
+  
+  activate: (@vtlfState) -> 
+    console.log 'activate state', @vtlfState
     
-  activate:   -> 
-    pluginMgr = require './plugin-mgr'
-    pluginMgr.activate()
+    @pluginMgr = require './plugin-mgr'
+    @pluginMgr.activate @vtlfState
+    
+  serialize: -> @vtlfState
     
   deactivate: -> 
-    pluginMgr.deactivate()
+    @pluginMgr.deactivate()
+
+module.exports = new ViewTailLargeFiles

@@ -37,9 +37,9 @@ class FileReader
       if err 
         throw new Error 'view-tail-large-files: Error opening ' + filePath + ', ' + err.message
       
+      if @isDestroyed then fs.close fd; return
+      
       do oneRead = =>
-        if @isDestroyed then fs.close fd; return
-        
         if bufPos isnt 0
           buf.copy buf, 0, bufPos, bufEnd
           bufEnd -= bufPos
@@ -52,6 +52,8 @@ class FileReader
                              bytesReadTotal + ', ' + err.message
           bytesReadTotal += bytesRead
           bufEnd += bytesRead
+          
+          if @isDestroyed then fs.close fd; return
           
           strPos = 0
           str = buf.toString 'utf8', bufPos, bufEnd
@@ -107,5 +109,7 @@ class FileReader
       lineBegOfs = lineEndOfs - Math.floor(index[lineNum] / 0x100000000)
       buf.toString 'utf8', lineBegOfs - startOfs, lineEndOfs - 1 - startOfs
       
-  destroy: -> @isDestroyed = yes
+  destroy: -> 
+    @isDestroyed = yes
+    delete @index
 

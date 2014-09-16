@@ -8,11 +8,11 @@ FileView = null
 module.exports =
 class ViewOpener
   
-  constructor: (@filePath, @creatorPlugin) ->
+  constructor: (@filePath, @creator) ->
     FileView = require './file-view'
     
-  getFilePath:        -> @filePath
-  getCreatorPlugin:   -> @creatorPlugin
+  getFilePath: -> @filePath
+  getCreator:  -> @creator
   
   # these are required for this to be an Atom view opener
   getViewClass: -> FileView

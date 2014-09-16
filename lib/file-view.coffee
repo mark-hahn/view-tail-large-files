@@ -35,33 +35,40 @@ class FileView extends ScrollView
     pluginMgr  = require './plugin-mgr'
     LineMgr    = require './line-mgr'
     FileReader = require './file-reader'
-    # pluginMgr.activate()
     @$lines   = @find '.lines'
     @filePath = @viewOpener.getFilePath()
-    @reader    = new FileReader @filePath
+    @reader   = new FileReader @filePath
     @lineMgr  = new LineMgr @reader, @, @$lines, chrW, chrH
     
-    plugins = pluginMgr.getPlugins @filePath, @, @reader, @lineMgr, @viewOpener
-    @reader.setPlugins   plugins, @
-    @lineMgr.setPlugins plugins, @
+    [@plugins, @pluginsByMethod] = 
+      pluginMgr.getPlugins @filePath, @, @reader, @lineMgr, @viewOpener
+    @reader.setPlugins  @pluginsByMethod, @
+    @lineMgr.setPlugins @pluginsByMethod, @
     
     atom.workspaceView.command "pane:item-removed", (e, opener, tabIdx) => 
       if opener is @viewOpener 
         @reader.destroy()
+        	
+    @preFileOpen  = pluginMgr.getCall @pluginsByMethod, 'preFileOpen',  @
+    @postFileOpen = pluginMgr.getCall @pluginsByMethod, 'postFileOpen', @
   
-  # this is actually just a convenience routine for plugins
-  # a view shouldn't be doing things like this.
-  # there may be an api file for this stuff later   
-  # this loads a file, shows progress, and finally shows the lines in this view   
-  open: ->
-    ProgressView = require '../lib/progress-view'
-    progressView = new ProgressView @reader.getFileSize(), @
-    @reader.buildIndex progressView, =>
-      setTimeout => 
-        progressView.destroy()
-        @lineMgr.updateLinesInDOM()
-        @$lines.show()
-      , 300
+  # # this is actually just a convenience routine for plugins
+  # # a view shouldn't be doing things like this.
+  # # there may be an api file for this stuff later   
+  # # this loads a file, shows progress, and finally shows the lines in this view   
+  # open: ->
+    process.nextTick =>
+      if @preFileOpen(@filePath) is false then @Destroy; return
+      ProgressView =  require '../lib/progress-view'
+      progressView = new ProgressView @reader.getFileSize(), @
+      @reader.buildIndex progressView, =>
+        setTimeout => 
+          progressView.destroy()
+          @lineMgr.updateLinesInDOM()
+          @$lines.show()
+          @focus()
+          @postFileOpen @filePath
+        , 300
     
   getFilePath: -> @filePath
   get$lines:   -> @$lines
@@ -76,6 +83,8 @@ class FileView extends ScrollView
     @$lines.css               {width, height}
 
   destroy: ->
-    @viewOpener.getCreatorPlugin()?.destroy()
-    @reader?.destroy()
+    @viewOpener.getCreator()?.destroy()
+    @reader.destroy()
+    @lineMgr.destroy()
+    for plugin of @plugins then plugin?.destroy()
     @detach()

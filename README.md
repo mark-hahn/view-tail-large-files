@@ -27,9 +27,10 @@ Here are some ideas for new plug-ins. I will implement some of these myself but 
 
 bugs:
   going away from tab breaks tailing
-  double progress showing
+  tail missing on some (gigabyte.log is one)
+  crash opening pdf
+  return key when dirs col selected also opens file
   
-
 # limitations
 
 - If you expand the pane the text lines won't expand until you scroll.

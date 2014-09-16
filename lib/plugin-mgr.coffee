@@ -5,9 +5,11 @@
 # values indicate whether more than one plugin may provide this method
 # if two plugins conflict, one is randomly allowed to be used
 methods =
-  includeLine: yes
-  newLines:    yes
-  scroll:      yes
+  includeLine:  yes
+  newLines:     yes
+  scroll:       yes
+  preFileOpen:  yes
+  postFileOpen: yes
     
 fs   = require 'fs-plus'
 path = require 'path'
@@ -19,9 +21,9 @@ module.exports =
     atom.confirm
       message: 'View-Tail-Large-Files Error:\n\n'
       detailedMessage: msg
-      buttons['Close']
+      buttons:['Close']
 
-  activate: -> 
+  activate: (@vtlfState) -> 
     Plugins = {}
     regexesStr =  atom.config.get 'view-tail-large-files.selectPluginsByRegexOnFilePath'
     regexCfg   = new RegExp '(^|[\\s;,])?([^\\s;,]+):([^\\s;,]*)([\\s;,]|$)', 'g'
@@ -39,40 +41,51 @@ module.exports =
         continue
       PluginClass.name ?= pluginNpmName.replace /\W/g, ''
       Plugins[PluginClass.name] =  {regex, PluginClass}  
-    for pluginName, plugin of Plugins then plugin.PluginClass.activate? __dirname + '/'
+    for pluginName, plugin of Plugins
+      {PluginClass, regex} = plugin
+      PluginClass.activate? @vtlfState, __dirname + '/', @
+      if regex is ''
+        plugin.PluginClass.singletonInstance = new PluginClass @vtlfState, __dirname + '/', @
+    null
   
   deactivate: -> 
-    for pluginName, plugin of Plugins then plugin.PluginClass.deactivate?()
+    for pluginName, plugin of Plugins then plugin.PluginClass.destroy?()
       
   getPlugins: (filePath, args...) ->
-    pluginsByMethodName = {}
+    plugins = []
+    pluginsByMethod = {}
     for pluginName, plugin of Plugins
-      PluginClass = plugin.PluginClass
+      {PluginClass, regex} = plugin
       
-      if (pluginRegex = plugin.regex) is ''
-        new PluginClass filePath, args...
+      if (pluginInst = PluginClass.singletonInstance)
+        for methodName, multiplePluginsOK of methods when PluginClass.prototype[methodName]
+          pluginsByMethod[methodName] ?=  []
+          if multiplePluginsOK or pluginsByMethod[methodName].length is 0
+            pluginsByMethod[methodName].push pluginInst
         continue
         
-      pluginInst = null
-      if pluginRegex.test filePath.replace /\\/g, '/'
+      if regex.test filePath.replace /\\/g, '/'
         for methodName, multiplePluginsOK of methods when PluginClass.prototype[methodName]
-          if not pluginsByMethodName[methodName]
+          if not pluginsByMethod[methodName]
             try
-              pluginInst ?= new PluginClass filePath, args...
+              if not pluginInst
+                state = (@vtlfState[pluginName] ?= {})
+                pluginInst = new PluginClass state, __dirname + '/', @, filePath, args...
+                plugins.push pluginInst
             catch e
               break
-            pluginsByMethodName[methodName] = []
-          if multiplePluginsOK or plugins[methodName].length is 0
-            pluginsByMethodName[methodName].push pluginInst
+            pluginsByMethod[methodName] = []
+          if multiplePluginsOK or pluginsByMethod[methodName].length is 0
+            pluginsByMethod[methodName].push pluginInst
             
-    # console.log 'pluginsByMethodName', pluginsByMethodName
-    pluginsByMethodName
+    # console.log 'pluginsByMethod', pluginsByMethod
+    [plugins, pluginsByMethod]
     
-  getCall: (plugins, methodName, view) ->
-      if (plugins = plugins[methodName])
-        (args...) -> 
-          for plugin in plugins
-            if plugin[methodName].call(plugin, view, args...) is false 
-              return false
-          true
-      else -> true
+  getCall: (pluginsByMethod, methodName, view) ->
+    if (plugins = pluginsByMethod[methodName]) 
+      (args...) -> 
+        for plugin in plugins
+          if plugin[methodName].call(plugin, view, args...) is false 
+            return false
+        true
+    else -> true

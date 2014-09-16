@@ -52,8 +52,8 @@ class LineMgr
       @fileView.setLineNumsWidth @lineNumCharCount
       @lastLineNumCharCount = @lineNumCharCount
     @fileView.setLinesDivSize @lineNumCharCount, @lineCount, @maxLineLen
-    @pluginsNewLines(@lineNumCharCount, @lineCount, @maxLineLen)
     @getScrollPos()
+    @pluginsNewLines @lineNumCharCount, @lineCount, @maxLineLen, @botLineNum    
     @loadNearLines()
     
   getScrollPos: ->
@@ -80,12 +80,9 @@ class LineMgr
       deadLine[1].remove()
       
   setScrollPos: (lineNum) -> 
-    lineNum = Math.max 0, Math.min @lineCount-1, lineNum
-    @fileView.scrollTop lineNum * @chrH
+    process.nextTick => 
+      lineNum = Math.max 0, Math.min @lineCount-1, lineNum
+      @fileView.scrollTop lineNum * @chrH
     
-  # scrollRelative: (ofs) ->
-  #   @getScrollPos()
-  #   @scrollToLineNum @topLineNum + ofs
-  #   
-  # getLineVis: -> @getScrollPos(); @linesVis
+  destroy: ->
         
