@@ -24,39 +24,34 @@ module.exports =
 class FileView extends ScrollView
   
   @content: ->
-    @div class:'view-tail-large-files editor-colors', tabindex:-1,  \
-         style:'overflow:scroll;', =>
-      @div class: 'lines', \
-           style:'display:none; white-space:pre; 
-                  font-family:' + fontFamily + '; font-size:' + fontSize + 'px'
-  
+    @div class:'view-tail-large-files vtlf-form', tabindex:-1, =>
+      
+      @div outlet:'outer', class:'outer', =>
+        @div outlet:'lines', class:'lines'
+          
+      @div outlet:'scrollbar', class:'scrollbar', =>
+        @div outlet:'thmbScrl', class:'thmb-scrl', =>
+          @div outlet:'thumb', class:'thumb'
+	                     
   initialize: (@viewOpener) ->
     super
     pluginMgr  = require './plugin-mgr'
     LineMgr    = require './line-mgr'
     FileReader = require './file-reader'
-    @$lines   = @find '.lines'
     @filePath = @viewOpener.getFilePath()
     @reader   = new FileReader @filePath
-    @lineMgr  = new LineMgr @reader, @, @$lines, chrW, chrH
+    @lineMgr  = new LineMgr @reader, @, @lines, chrW, chrH
+    @divPixOfs = 0
     
     [@plugins, @pluginsByMethod] = 
       pluginMgr.getPlugins @filePath, @, @reader, @lineMgr, @viewOpener
     @reader.setPlugins  @pluginsByMethod, @
     @lineMgr.setPlugins @pluginsByMethod, @
-    
-    atom.workspaceView.command "pane:item-removed", (e, opener, tabIdx) => 
-      if opener is @viewOpener 
-        @reader.destroy()
-        	
     @preFileOpen  = pluginMgr.getCall @pluginsByMethod, 'preFileOpen',  @
     @postFileOpen = pluginMgr.getCall @pluginsByMethod, 'postFileOpen', @
   
-  # # this is actually just a convenience routine for plugins
-  # # a view shouldn't be doing things like this.
-  # # there may be an api file for this stuff later   
-  # # this loads a file, shows progress, and finally shows the lines in this view   
-  # open: ->
+    @subscribe @scrollbar, 'scroll', @thumbScrlEvent
+        	
     process.nextTick =>
       if @preFileOpen(@filePath) is false then @Destroy; return
       ProgressView =  require '../lib/progress-view'
@@ -65,22 +60,47 @@ class FileView extends ScrollView
         setTimeout => 
           progressView.destroy()
           @lineMgr.updateLinesInDOM()
-          @$lines.show()
+          @lines.show()
           @focus()
           @postFileOpen @filePath
         , 300
+        
+    @setThumbPos 0
     
   getFilePath: -> @filePath
-  get$lines:   -> @$lines
 
-  setLineNumsWidth: (lineNumCharCount) ->
-    @$lines.find('.line-num').css width: lineNumCharCount * chrW
+  setThumbPos: (lineNum) ->
+    @fromSetThumbPos = yes
+    @thmbScrl.height (outerH = @height())
+    linesH = lineNum * chrH
+    if linesH < outerH
+      @thumb.height outerH
+      @scrollbar.scrollTop 0
+    else if @lineCount is 0 
+      @thumb.height 16
+      @scrollbar.scrollTop 0
+    else
+      @thumb.height (thumbH = Math.max 16, (outerH / linesH) * outerH)
+      @scrollbar.scrollTop (outerH - thumbH) * (1 - (lineNum/(@lineCount-1)))
+    @fromSetThumbPos = no
     
-  setLinesDivSize: (lineNumCharCount, lineCount, maxLineLen) ->
-    width  = (lineNumCharCount + maxLineLen) * chrW
-    height = lineCount * chrH + 15
-    @$lines.find('.line').css {width}
-    @$lines.css               {width, height}
+  thumbScrlEvent: ->
+    if @fromSetThumbPos then return
+    lineNum = Math.floor (@lineCount-1) * (1 - (@scrollbar.scrollTop() / (outerH - thumbH)))
+    @lineMgr.setScrollPos lineNum, yes
+
+  setLinesDivSize: (lineNumCharCount, @lineCount, 
+                    maxLineLen, topLineNum, botLineNum, divHeight) ->
+                      
+    width = (lineNumCharCount + maxLineLen) * chrW
+    @lines.find('.line').css {width}
+    @lines.css               {width, height: divHeight+100}
+
+    topPix = topLineNum * chrH - 1000
+    botPix = botLineNum * chrH + 1000
+    if topPix < @divPixOfs or botPix > @divPixOfs + divHeight
+      @divPixOfs = Math.max 0, topPix - divHeight / 2
+    @divPixOfs
 
   destroy: ->
     @viewOpener.getCreator()?.destroy()
@@ -88,3 +108,6 @@ class FileView extends ScrollView
     @lineMgr.destroy()
     for plugin of @plugins then plugin?.destroy()
     @detach()
+    @unsubscribe
+    
+###

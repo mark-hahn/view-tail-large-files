@@ -6,12 +6,16 @@ fs  = require 'fs-plus'
 LineView  = require './line-view'
 pluginMgr = require './plugin-mgr'
 
+divHeight = 1e7
+
 module.exports =
 class LineMgr
   
-  constructor: (@reader, @fileView, @$lines, @chrW, @chrH) ->
+  constructor: (@reader, @fileView, @lines, @chrW, @chrH) ->
     @lastLineNumCharCount = 0
     @$lineByNum = {}
+    
+    @scrollPixOfs = 0
 
     @fileView.on 'scroll', => 
       @getScrollPos()
@@ -32,33 +36,56 @@ class LineMgr
   setPlugins: (plugins, view) ->
     @pluginsNewLines = pluginMgr.getCall plugins, 'newLines', view
     @pluginsScroll   = pluginMgr.getCall plugins, 'scroll',   view
+    
+  chkLinesDivSize: ->
+    @getScrollPos()
+    oldOfs    = @scrollPixOfs
+    @scrollPixOfs =
+      @fileView.setLinesDivSize \
+        @lineNumCharCount, @lineCount, @maxLineLen, @topLineNum, @botLineNum, divHeight
+    if @scrollPixOfs isnt oldOfs
+      delta = @scrollPixOfs - oldOfs
+      @lines.find('.line').each ->
+        $line  = $ @
+        top = $line.position().top + delta
+        if (0 <= top < divHeight) then $line.css {top}
+        else @deleteLine $line.attr('data-line'), $line
   
   appendLine: (lineNum, text) ->
     lineNumStr = '' + lineNum
     if lineNumStr of @$lineByNum then return
-    top          = lineNum           * @chrH
-    lineNumW     = @lineNumCharCount * @chrW
-    lineW        = (@lineNumCharCount + @maxLineLen) * @chrW
-    lineView     = new LineView top, lineW, lineNumW, lineNum, text
-    @$lines.append lineView
+    top = lineNum * @chrH - @scrollPixOfs
+    if not (0 <= top < divHeight)
+      chkLinesDivSize()
+      top = lineNum * @chrH - @scrollPixOfs
+    lineNumW = @lineNumCharCount * @chrW
+    lineW    = (@lineNumCharCount + @maxLineLen) * @chrW
+    lineView = new LineView top, lineW, lineNumW, lineNum, text
+    @lines.append lineView
     @$lineByNum[lineNumStr] = lineView
     if (lineNum % 200) is 0 then @removeFarLines()
   
+  deleteLine: (lineNum, $line) ->
+    delete @$lineByNum[lineNum]
+    $line.remove()
+    
   updateLinesInDOM: ->
     @lineCount  = @reader.getLineCount()
     @maxLineLen = @reader.getMaxLineLen()
     @lineNumCharCount = ('' + @lineCount).length + 2
     if @lastLineNumCharCount isnt @lineNumCharCount
-      @fileView.setLineNumsWidth @lineNumCharCount
-      @lastLineNumCharCount = @lineNumCharCount
-    @fileView.setLinesDivSize @lineNumCharCount, @lineCount, @maxLineLen
+      @lines.find('.line-num').css width: @lineNumCharCount * @chrW
+    @lastLineNumCharCount = @lineNumCharCount
+    @chkLinesDivSize()
     @getScrollPos()
     @pluginsNewLines @lineNumCharCount, @lineCount, @maxLineLen, @botLineNum    
     @loadNearLines()
     
   getScrollPos: ->
-    @topLineNum = Math.floor @fileView.scrollTop() / @chrH
-    @linesVis   = Math.floor @fileView.height()    / @chrH
+    scrollTop   = @scrollPixOfs + @fileView.scrollTop()
+    height      = @scrollPixOfs + @fileView.height()
+    @topLineNum = Math.floor  scrollTop / @chrH
+    @linesVis   = Math.floor  height    / @chrH
     @botLineNum = @topLineNum + @linesVis
     
   loadNearLines: ->
@@ -71,18 +98,17 @@ class LineMgr
   removeFarLines: ->
     @getScrollPos()
     lineNum   = @topLineNum + @linesVis / 2
-    lineByNum = @$lineByNum
     deadLines = []
-    for num, $line of lineByNum
-      if (Math.abs lineNum - num) > 500 then deadLines.push [num, $line]
+    for num, $line of @$lineByNum
+      if Math.abs(lineNum - num) > 500 then deadLines.push [num, $line]
     for deadLine in deadLines
-      delete lineByNum[deadLine[0]]
-      deadLine[1].remove()
+      @deleteLine deadLine...
       
-  setScrollPos: (lineNum) -> 
+  setScrollPos: (lineNum, fromDrag) -> 
     process.nextTick => 
       lineNum = Math.max 0, Math.min @lineCount-1, lineNum
-      @fileView.scrollTop lineNum * @chrH
-    
+      @lines.parent().scrollTop lineNum * @chrH - @scrollPixOfs
+      if not fromDrag then @fileView.setThumbPos lineNum
+      
   destroy: ->
         

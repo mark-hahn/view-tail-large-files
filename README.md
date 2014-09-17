@@ -29,7 +29,6 @@ bugs:
   going away from tab breaks tailing
   tail missing on some (gigabyte.log is one)
   crash opening pdf
-  return key when dirs col selected also opens file
   
 # limitations
 

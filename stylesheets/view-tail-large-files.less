@@ -1,0 +1,46 @@
+@import "ui-variables";
+@import "syntax-variables";
+
+.view-tail-large-files {
+  position:         absolute; 
+  overflow:         hidden;
+  font-size:        @font-size;
+  font-family:      @font-family;
+  color:            @syntax-text-color;
+  background-color: @syntax-background-color;
+  
+  .outer {
+    overflow: hidden;
+    
+    .lines {
+      position:    relative;
+      white-space: pre; 
+      display:     none; 
+    }
+  }
+  
+  .scrollbar {
+    position:         absolute;
+    background-color: @button-background-color;
+    overflow:         hidden;
+    width:            18px; 
+    height:           100%; 
+    top:              0; 
+    right:            0; 
+    
+    .thmb-scrl {
+      position: absolute; 
+      width:    100%;
+      
+      .thumb {
+        position:         relative;  
+        background-color: @button-background-color-selected;
+        width:            16px; 
+        left:              1px; 
+        bottom:            0px; 
+        border-radius:     4px;
+      }
+    }
+  }
+}
+
