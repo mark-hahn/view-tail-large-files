@@ -1,113 +1,124 @@
 
 # lib\file-view.coffee
 
-console.log 'file-view', __dirname, process.cwd()
-
-{$, ScrollView} = require 'atom'
-
-pluginMgr  = null
-LineMgr    = null
-FileReader = null
-
-fontFamily  = 'courier'
-fontSize    = 14
-
-$testDiv  = $ '<div><span>&nbsp;</span><div style="clear:both">&nbsp;</div></div>'
-$testSpan = $testDiv.find 'span'
-$testSpan.css {position:'absolute', fontSize, fontFamily, visibility:'hidden'}
-$('body').append $testDiv
-chrW = $testSpan.width() - 1
-chrH = $testDiv.height() + 3
-$testDiv.remove()
+{$, View} = require 'atom'
 
 module.exports =
-class FileView extends ScrollView
+class FileView extends View
   
   @content: ->
     @div class:'view-tail-large-files vtlf-form', tabindex:-1, =>
-      
-      @div outlet:'outer', class:'outer', =>
-        @div outlet:'lines', class:'lines'
+      @div outlet:'lines', class:'lines'
           
       @div outlet:'scrollbar', class:'scrollbar', =>
-        @div outlet:'thmbScrl', class:'thmb-scrl', =>
-          @div outlet:'thumb', class:'thumb'
+        @div outlet:'thumb', class:'thumb'
+            
+      @div outlet:'metricsTestDiv', style:'visibility:none', =>
+        @span outlet:'metricsTestSpan', 'W'
+        @div style:"clear:both", '&nbsp'
 	                     
+  getFilePath: -> @filePath
+  
   initialize: (@viewOpener) ->
-    super
+    # kludge to fix font problem
+    @css fontFamily: 'Courier', fontSize: 14
+    
     pluginMgr  = require './plugin-mgr'
     LineMgr    = require './line-mgr'
     FileReader = require './file-reader'
+    
+    @topLineNum = @linesInView = @botLineNum = @lineCount = 0	    
     @filePath = @viewOpener.getFilePath()
     @reader   = new FileReader @filePath
-    @lineMgr  = new LineMgr @reader, @, @lines, chrW, chrH
-    @divPixOfs = 0
+    @events   = []
+    @addEvents()
     
     [@plugins, @pluginsByMethod] = 
-      pluginMgr.getPlugins @filePath, @, @reader, @lineMgr, @viewOpener
+      pluginMgr.getPlugins @filePath, @, @reader, @viewOpener
     @reader.setPlugins  @pluginsByMethod, @
-    @lineMgr.setPlugins @pluginsByMethod, @
-    @preFileOpen  = pluginMgr.getCall @pluginsByMethod, 'preFileOpen',  @
-    @postFileOpen = pluginMgr.getCall @pluginsByMethod, 'postFileOpen', @
-  
-    @subscribe @scrollbar, 'scroll', @thumbScrlEvent
-        	
+    @postFileOpen    = pluginMgr.getCall @pluginsByMethod, 'postFileOpen', @
+    @lineApprove     = pluginMgr.getCall @pluginsByMethod, 'lineApprove',  @
+    @lineDisplay     = pluginMgr.getCall @pluginsByMethod, 'lineDisplay',  @
+    @pluginsNewLines = pluginMgr.getCall @pluginsByMethod, 'newLines',     @
+    @pluginsScroll   = pluginMgr.getCall @pluginsByMethod, 'scroll',       @
+    
     process.nextTick =>
-      if @preFileOpen(@filePath) is false then @Destroy; return
-      ProgressView =  require '../lib/progress-view'
+      ProgressView = require '../lib/progress-view'	
       progressView = new ProgressView @reader.getFileSize(), @
       @reader.buildIndex progressView, =>
+        if not @haveMetrics
+          @chrW = @metricsTestSpan.width()  - 1
+          @chrH = @metricsTestSpan.height() + 3
+          @metricsTestDiv.remove()
+          @haveMetrics = yes
+        @lineMgr = new LineMgr @lines, @reader, @chrW, @chrH
         setTimeout => 
+          @haveNewLines()
           progressView.destroy()
-          @lineMgr.updateLinesInDOM()
           @lines.show()
           @focus()
           @postFileOpen @filePath
+          @resizeSetInterval = setInterval =>
+            if @lastArea isnt @width() * @height()
+              @resize()
+              @lastArea = @width() * @height()
+          , 300
         , 300
-        
-    @setThumbPos 0
     
-  getFilePath: -> @filePath
-
-  setThumbPos: (lineNum) ->
-    @fromSetThumbPos = yes
-    @thmbScrl.height (outerH = @height())
-    linesH = lineNum * chrH
-    if linesH < outerH
-      @thumb.height outerH
-      @scrollbar.scrollTop 0
-    else if @lineCount is 0 
-      @thumb.height 16
-      @scrollbar.scrollTop 0
-    else
-      @thumb.height (thumbH = Math.max 16, (outerH / linesH) * outerH)
-      @scrollbar.scrollTop (outerH - thumbH) * (1 - (lineNum/(@lineCount-1)))
-    @fromSetThumbPos = no
+  setScroll: (@topLineNum) ->
+    @topLineNum = Math.min @topLineNum, @lineCount - @linesInView
+    console.assert @botLineNum < @lineCount - 1, {@topLineNum, @botLineNum, @lineCount, @linesInView}
+    @botLineNum = @topLineNum + @linesInView - 1
+    if @lineCount <= @linesInView then @scrollbar.hide()
+    else 
+      viewH = @height()
+      linesH = @lineCount * @chrH
+      @scrollbar.show()
+      @thumb.css
+        top:     (viewH - 16) * (@topLineNum / (@lineCount - @linesInView))
+        height:  (thumbH = Math.max 16, (viewH / linesH) * viewH)
+    @lineMgr.updateLinesInDom @topLineNum, @botLineNum, @lineNumCharCount, @maxLineLen
+    @pluginsScroll @topLineNum, @botLineNum, @lineNumCharCount, @maxLineLen
     
-  thumbScrlEvent: ->
-    if @fromSetThumbPos then return
-    lineNum = Math.floor (@lineCount-1) * (1 - (@scrollbar.scrollTop() / (outerH - thumbH)))
-    @lineMgr.setScrollPos lineNum, yes
+  resize: ->
+    @lines.css width: @width() - 18
+    @linesInView = Math.floor(@height() / @chrH) - 1
+    @setScroll @topLineNum
+      
+  haveNewLines: ->
+    @lineCount = @reader.getLineCount()
+    @maxLineLen = @reader.getMaxLineLen()
+    @lineNumCharCount = ('' + @lineCount).length + 2
+    @pluginsNewLines @lineNumCharCount, @lineCount, @maxLineLen, @topLineNum, @botLineNum
+    @resize()
+    
+  scrollFromMouse: (e) ->
+    thumbTravel = @height() - 36
+    mouseOfs    = e.pageY - @offset().top
+    thumbOfs    = Math.max 0, Math.min thumbTravel, mouseOfs - 8
+    @setScroll Math.floor (thumbOfs / thumbTravel) * (@lineCount - @linesInView)
+    
+  mouseEvent: (e) ->
+    switch e.type
+      when 'mousedown' then    @mouseIsDown = yes; @scrollFromMouse e
+      when 'mouseup'   then    @mouseIsDown = no
+      when 'mousemove' then if @mouseIsDown then   @scrollFromMouse e
+    false
+      
+  addEvent: ($ele, types, func) ->
+    $ele.on types, func
+    @events.push [$ele, func]
 
-  setLinesDivSize: (lineNumCharCount, @lineCount, 
-                    maxLineLen, topLineNum, botLineNum, divHeight) ->
-                      
-    width = (lineNumCharCount + maxLineLen) * chrW
-    @lines.find('.line').css {width}
-    @lines.css               {width, height: divHeight+100}
-
-    topPix = topLineNum * chrH - 1000
-    botPix = botLineNum * chrH + 1000
-    if topPix < @divPixOfs or botPix > @divPixOfs + divHeight
-      @divPixOfs = Math.max 0, topPix - divHeight / 2
-    @divPixOfs
+  addEvents: ->
+    @addEvent @scrollbar, 'mousedown',                   (e) => @mouseEvent e
+    @addEvent $(window),  'mouseup mousemove',           (e) => @mouseEvent e
 
   destroy: ->
+    if @resizeSetInterval then clearSetInterval @resizeSetInterval
     @viewOpener.getCreator()?.destroy()
     @reader.destroy()
     @lineMgr.destroy()
     for plugin of @plugins then plugin?.destroy()
+    for event  of @events  then event[0].off event[1]
     @detach()
-    @unsubscribe
     
-###
