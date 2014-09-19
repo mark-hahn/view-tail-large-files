@@ -66,19 +66,20 @@ class FileView extends View
         , 300
     
   setScroll: (@topLineNum) ->
-    @topLineNum = Math.min @topLineNum, @lineCount - @linesInView
-    console.assert @botLineNum < @lineCount - 1, {@topLineNum, @botLineNum, @lineCount, @linesInView}
-    @botLineNum = @topLineNum + @linesInView - 1
-    if @lineCount <= @linesInView then @scrollbar.hide()
+    if @lineCount <= @linesInView 
+      @scrollbar.hide()
+      @topLineNum = 0
+      @botLineNum = @lineCount-1
     else 
-      viewH = @height()
-      linesH = @lineCount * @chrH
+      @topLineNum = Math.max 0, Math.min @lineCount-@linesInView, @topLineNum
+      @botLineNum = Math.min @lineCount-1, @topLineNum + @linesInView - 1
+      sbHgt       = @scrollbar.height()
+      height      = Math.max 16, sbHgt * (@linesInView / @lineCount)
+      top         = (sbHgt-height) * (@topLineNum / (@lineCount - @linesInView))
+      @thumb.css {top, height}
       @scrollbar.show()
-      @thumb.css
-        top:     (viewH - 16) * (@topLineNum / (@lineCount - @linesInView))
-        height:  (thumbH = Math.max 16, (viewH / linesH) * viewH)
     @lineMgr.updateLinesInDom @topLineNum, @botLineNum, @lineNumCharCount, @maxLineLen
-    @pluginsScroll @topLineNum, @botLineNum, @lineNumCharCount, @maxLineLen
+    @pluginsScroll            @topLineNum, @botLineNum, @lineNumCharCount, @maxLineLen
     
   resize: ->
     @lines.css width: @width() - 18
@@ -93,14 +94,24 @@ class FileView extends View
     @resize()
     
   scrollFromMouse: (e) ->
-    thumbTravel = @height() - 36
-    mouseOfs    = e.pageY - @offset().top
-    thumbOfs    = Math.max 0, Math.min thumbTravel, mouseOfs - 8
+    thumbTravel = @height() - @thumb.height() - 20
+    mouseDelta  = e.pageY - @initialMouseY
+    thumbOfs    = @initialThumbY + mouseDelta
     @setScroll Math.floor (thumbOfs / thumbTravel) * (@lineCount - @linesInView)
     
   mouseEvent: (e) ->
     switch e.type
-      when 'mousedown' then    @mouseIsDown = yes; @scrollFromMouse e
+      when 'mousedown' 
+        if e.target is @thumb[0]
+          @mouseIsDown   = yes
+          @initialMouseY = e.pageY
+          @initialThumbY = @thumb.position().top
+          @scrollFromMouse e
+        else
+          if e.pageY < @thumb.offset().top
+            @setScroll @topLineNum - @linesInView
+          else
+            @setScroll @topLineNum + @linesInView
       when 'mouseup'   then    @mouseIsDown = no
       when 'mousemove' then if @mouseIsDown then   @scrollFromMouse e
     false
