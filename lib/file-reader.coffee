@@ -9,25 +9,22 @@ bufSize = 32768
 module.exports =
 class FileReader
   
-  constructor: (@filePath) ->
+  constructor: (@fileView) ->
+    {@filePath, @fileViewEmitter} = @fileView
     pluginMgr = require './plugin-mgr'
     @index = []
     @fileSize = 0
-    @maxLineLen = 40
+    @textMaxChrCount = 40
  
-  getFilePath:   -> @filePath
-  getLineCount:  -> @index.length
-  getFileSize:   -> fs.getSizeSync @filePath
-  getMaxLineLen: -> @maxLineLen
-  
-  setPlugins: (plugins, view) ->
-    @approveLine = pluginMgr.getCall plugins, 'approveLine', view
+  getFileSize:        -> fs.getSizeSync @filePath
+  getLineCount:       -> @index.length
+  getTextMaxChrCount: -> @textMaxChrCount
   
   buildIndex: (progressView, finishedCB) ->
-    {index, filePath, isDestroyed} = @
-    if isDestroyed then return
+    if @isDestroyed then return
     
-    filePos = bytesReadTotal = @fileSize
+    {index, filePath} = @
+    @lastFilePos = filePos = bytesReadTotal = @fileSize
     @fileSize = fileSize = @getFileSize()
     
     bufPos = bufEnd = 0
@@ -35,7 +32,7 @@ class FileReader
      
     fs.open filePath, 'r', (err, fd) =>
       if err 
-        throw new Error 'view-tail-large-files: Error opening ' + filePath + ', ' + err.message
+        throw new Error "view-tail-large-files: Error opening #{filePath}, #{err.message}"
       
       if @isDestroyed then fs.close fd; return
       
@@ -48,12 +45,13 @@ class FileReader
         fs.read fd, buf, bufEnd, bufSize - bufEnd, bytesReadTotal, (err, bytesRead) =>
           if err 
             fs.close fd
-            throw new Error 'view-tail-large-files: Error reading ' + filePath + ', ' + 
-                             bytesReadTotal + ', ' + err.message
+            throw new Error "view-tail-large-files: Error reading " +
+                            "#{filePath}, #{bytesReadTotal}, #{err.message}"
+                              
           bytesReadTotal += bytesRead
           bufEnd += bytesRead
           
-          if @isDestroyed then fs.close fd; return
+          if @isDestroyed then fs.close fd; return	   
           
           strPos = 0
           str = buf.toString 'utf8', bufPos, bufEnd
@@ -65,9 +63,8 @@ class FileReader
             strPos      = regex.lastIndex
             filePos    += lineLenByt
             bufPos     += lineLenByt
-            if @approveLine index.length, lineText
-              index.push (filePos - (@lastFilePos ? 0)) * 0x100000000 + filePos
-              @maxLineLen = Math.max lineText.length, @maxLineLen
+            index.push (filePos - @lastFilePos) * 0x100000000 + filePos
+            @textMaxChrCount = Math.max lineText.length, @textMaxChrCount
             @lastFilePos = filePos
             
           if bytesReadTotal < fileSize 
@@ -83,10 +80,9 @@ class FileReader
           else
             if filePos < fileSize 
               lineText = str[strPos...]
-              if @approveLine index.length, lineText
-                index.push (fileSize - (@lastFilePos ? 0)) * 0x100000000 + fileSize
-                @maxLineLen = Math.max lineText.length, @maxLineLen
-            progressView?.setProgress 1, index.length, @maxLineLen
+              index.push (fileSize - @lastFilePos) * 0x100000000 + fileSize
+              @textMaxChrCount = Math.max lineText.length, @textMaxChrCount
+            progressView?.setProgress 1, index.length, @textMaxChrCount
             finishedCB()
             fs.close fd
             
@@ -107,7 +103,8 @@ class FileReader
     for lineNum in [start...end]
       lineEndOfs = index[lineNum] & 0xffffffff
       lineBegOfs = lineEndOfs - Math.floor(index[lineNum] / 0x100000000)
-      buf.toString 'utf8', lineBegOfs - startOfs, lineEndOfs - 1 - startOfs
+      stripCR = (if buf[lineEndOfs-startOfs-1] is 13 then 1 else 0)
+      buf.toString 'utf8', lineBegOfs - startOfs, lineEndOfs - stripCR - startOfs
       
   destroy: -> 
     @isDestroyed = yes

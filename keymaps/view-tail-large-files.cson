@@ -6,8 +6,10 @@
   'up':         'view-tail-large-files:up'
   'down':       'view-tail-large-files:down'
   
-  'pageup':    'view-tail-large-files:pgup'
-  'pagedown':  'view-tail-large-files:pgdown'
+  'pageup':     'view-tail-large-files:pgup'
+  'pagedown':   'view-tail-large-files:pgdown'
 
+  'ctrl-home':  'view-tail-large-files:top'
+  'ctrl-end':   'view-tail-large-files:bottom'
   'ctrl-enter': 'view-tail-large-files:parent'
   

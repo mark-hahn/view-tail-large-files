@@ -2,69 +2,83 @@
 # lib\file-view.coffee
 
 {$, View} = require 'atom'
+{Emitter} = require 'event-kit'
 
 module.exports =
 class FileView extends View
   
   @content: ->
     @div class:'view-tail-large-files vtlf-form', tabindex:-1, =>
-      @div outlet:'lines', class:'lines'
-          
-      @div outlet:'scrollbar', class:'scrollbar', =>
-        @div outlet:'thumb', class:'thumb'
+      @div outlet:'vtlf', class:'vtlf-inner', =>
+        
+        @div outlet:'lines', class:'lines'
             
-      @div outlet:'metricsTestDiv', style:'visibility:none', =>
-        @span outlet:'metricsTestSpan', 'W'
-        @div style:"clear:both", '&nbsp'
-	                     
-  getFilePath: -> @filePath
-  
+        @div outlet:'scrollbar', class:'scrollbar', =>
+          @div outlet:'thumb', class:'thumb'
+              
+        @div outlet:'metricsTestDiv', style:'visibility:hidden', =>
+          @span outlet:'metricsTestSpan', 'W'
+          @div style:"clear:both", '&nbsp'
+	             
+# API Events
+  onDidOpenFile:         (cb) => @fileViewEmitter.on 'did-open-file',          cb
+  onDidScroll:           (cb) => @fileViewEmitter.on 'did-scroll',             cb
+  onDidGetNewLines:      (cb) => @fileViewEmitter.on 'did-get-new-lines',      cb
+  onWillOpenFile:        (cb) => @fileViewEmitter.on 'will-open-file',         cb
+  onWillDestroyFileView: (cb) => @fileViewEmitter.on 'will-destroy-file-view', cb
+
   initialize: (@viewOpener) ->
-    # kludge to fix font problem
-    @css fontFamily: 'Courier', fontSize: 14
+    @pluginMgr = require './plugin-mgr'
     
-    pluginMgr  = require './plugin-mgr'
-    LineMgr    = require './line-mgr'
+# Public API Vars
+    @chrW = @chrH = null
+    @topLineNum = @linesInView = @botLineNum = @lineCount = 0	 
+    @filePath        = @viewOpener.getFilePath()
+    @globalEmitter   = @pluginMgr.globalEmitter
+    @fileViewEmitter = new Emitter
+# End of public vars
+
+    @fileViewEmitter.on 'did-open-file', => @globalEmitter.emit 'did-open-file', @
+    
     FileReader = require './file-reader'
-    
-    @topLineNum = @linesInView = @botLineNum = @lineCount = 0	    
-    @filePath = @viewOpener.getFilePath()
-    @reader   = new FileReader @filePath
-    @events   = []
+    LineMgr    = require './line-mgr'
+    @events  = []
     @addEvents()
     
-    [@plugins, @pluginsByMethod] = 
-      pluginMgr.getPlugins @filePath, @, @reader, @viewOpener
-    @reader.setPlugins  @pluginsByMethod, @
-    @postFileOpen    = pluginMgr.getCall @pluginsByMethod, 'postFileOpen', @
-    @lineApprove     = pluginMgr.getCall @pluginsByMethod, 'lineApprove',  @
-    @lineDisplay     = pluginMgr.getCall @pluginsByMethod, 'lineDisplay',  @
-    @pluginsNewLines = pluginMgr.getCall @pluginsByMethod, 'newLines',     @
-    @pluginsScroll   = pluginMgr.getCall @pluginsByMethod, 'scroll',       @
+    @pluginMgr.createPlugins @
+    
+    @okToOpenFile = yes
+    @fileViewEmitter.emit 'will-open-file'
+    if not @okToOpenFile then @destroy(); return
     
     process.nextTick =>
       ProgressView = require '../lib/progress-view'	
+      @reader      = new FileReader @
       progressView = new ProgressView @reader.getFileSize(), @
       @reader.buildIndex progressView, =>
-        if not @haveMetrics
-          @chrW = @metricsTestSpan.width()  - 1
-          @chrH = @metricsTestSpan.height() + 3
-          @metricsTestDiv.remove()
-          @haveMetrics = yes
-        @lineMgr = new LineMgr @lines, @reader, @chrW, @chrH
-        setTimeout => 
+        
+        # TODO kludge to fix font problem
+        @css fontFamily: 'Courier', fontSize: 14
+        
+        @chrW = @metricsTestSpan.width()  - 1	    
+        @chrH = @metricsTestSpan.height() + 3
+        @metricsTestDiv.remove()
+        @lineMgr   = new LineMgr    @
+        setTimeout =>
           @haveNewLines()
           progressView.destroy()
           @lines.show()
           @focus()
-          @postFileOpen @filePath
+          @fileViewEmitter.emit 'did-open-file'
+          
           @resizeSetInterval = setInterval =>
             if @lastArea isnt @width() * @height()
               @resize()
               @lastArea = @width() * @height()
           , 300
-        , 300
-    
+        , 500
+        
+  
   setScroll: (@topLineNum) ->
     if @lineCount <= @linesInView 
       @scrollbar.hide()
@@ -78,26 +92,30 @@ class FileView extends View
       top         = (sbHgt-height) * (@topLineNum / (@lineCount - @linesInView))
       @thumb.css {top, height}
       @scrollbar.show()
-    @lineMgr.updateLinesInDom @topLineNum, @botLineNum, @lineNumCharCount, @maxLineLen
-    @pluginsScroll            @topLineNum, @botLineNum, @lineNumCharCount, @maxLineLen
+    @lineMgr.updateLinesInDom  @topLineNum, @botLineNum, @lineNumMaxCharCount, @textMaxChrCount
+    @fileViewEmitter.emit 'did-scroll'
     
   resize: ->
-    @lines.css width: @width() - 18
-    @linesInView = Math.floor(@height() / @chrH) - 1
+    @lines.css width: @textMaxChrCount * @chrW
+    @linesInView = Math.floor @vtlf.height() / @chrH
     @setScroll @topLineNum
       
   haveNewLines: ->
-    @lineCount = @reader.getLineCount()
-    @maxLineLen = @reader.getMaxLineLen()
-    @lineNumCharCount = ('' + @lineCount).length + 2
-    @pluginsNewLines @lineNumCharCount, @lineCount, @maxLineLen, @topLineNum, @botLineNum
+    oldLineCount = @lineCount
+    @lineCount   = @reader.getLineCount()
+    @textMaxChrCount  = @reader.getTextMaxChrCount()
+    @lineNumMaxCharCount = ('' + @lineCount).length + 2
+    @fileViewEmitter.emit 'did-get-new-lines'
     @resize()
     
-  scrollFromMouse: (e) ->
-    thumbTravel = @height() - @thumb.height() - 20
-    mouseDelta  = e.pageY - @initialMouseY
-    thumbOfs    = @initialThumbY + mouseDelta
-    @setScroll Math.floor (thumbOfs / thumbTravel) * (@lineCount - @linesInView)
+  keyEvent: (key) ->
+    switch key
+      when 'up'     then @setScroll (@topLineNum -= 1           )
+      when 'down'   then @setScroll (@topLineNum += 1           )
+      when 'pgup'   then @setScroll (@topLineNum -= @linesInView)
+      when 'pgdown' then @setScroll (@topLineNum += @linesInView)
+      when 'top'    then @setScroll (@topLineNum  = 0           )
+      when 'bottom' then @setScroll (@topLineNum  = @lineCount  )
     
   mouseEvent: (e) ->
     switch e.type
@@ -106,14 +124,29 @@ class FileView extends View
           @mouseIsDown   = yes
           @initialMouseY = e.pageY
           @initialThumbY = @thumb.position().top
-          @scrollFromMouse e
         else
-          if e.pageY < @thumb.offset().top
-            @setScroll @topLineNum - @linesInView
-          else
-            @setScroll @topLineNum + @linesInView
-      when 'mouseup'   then    @mouseIsDown = no
-      when 'mousemove' then if @mouseIsDown then   @scrollFromMouse e
+          pageOfs = (if e.pageY < @thumb.offset().top then -@linesInView else @linesInView)
+          @setScroll (@topLineNum += pageOfs)
+          @mouseIsPaging = yes
+          setTimeout =>
+            interval = setInterval =>
+              if @mouseIsPaging 
+                @setScroll (@topLineNum += pageOfs)
+              else
+                clearInterval interval
+            , 100
+          , 250
+      when 'mousemove'
+        thumbTravel = @height() - @thumb.height() - 20
+        mouseDelta  = e.pageY - @initialMouseY
+        thumbOfs    = @initialThumbY + mouseDelta
+        @setScroll Math.floor (thumbOfs / thumbTravel) * (@lineCount - @linesInView)
+      when 'mouseup'
+        @mouseIsDown = @mouseIsPaging = no
+        
+      when 'mousewheel' 
+        @setScroll (@topLineNum -= Math.ceil(e.originalEvent.wheelDelta / @chrH))
+        
     false
       
   addEvent: ($ele, types, func) ->
@@ -121,15 +154,27 @@ class FileView extends View
     @events.push [$ele, func]
 
   addEvents: ->
-    @addEvent @scrollbar, 'mousedown',                   (e) => @mouseEvent e
-    @addEvent $(window),  'mouseup mousemove',           (e) => @mouseEvent e
+    @addEvent @, 'view-tail-large-files:up',       => @keyEvent 'up'
+    @addEvent @, 'view-tail-large-files:down',     => @keyEvent 'down'
+    @addEvent @, 'view-tail-large-files:pgup',     => @keyEvent 'pgup'
+    @addEvent @, 'view-tail-large-files:pgdown',   => @keyEvent 'pgdown'
+    @addEvent @, 'view-tail-large-files:top',      => @keyEvent 'top'
+    @addEvent @, 'view-tail-large-files:bottom',   => @keyEvent 'bottom'
+
+    @addEvent @,          'mousewheel',        (e) => @mouseEvent e
+    @addEvent @scrollbar, 'mousedown',         (e) => @mouseEvent e
+    @addEvent $(window),  'mousemove mouseup', (e) => 
+      if @mouseIsDown or @mouseIsPaging then @mouseEvent e
 
   destroy: ->
+    console.log 'destroy'
+    @fileViewEmitter.emit 'will-destroy-file-view'
     if @resizeSetInterval then clearSetInterval @resizeSetInterval
-    @viewOpener.getCreator()?.destroy()
     @reader.destroy()
     @lineMgr.destroy()
-    for plugin of @plugins then plugin?.destroy()
-    for event  of @events  then event[0].off event[1]
+    for event of @events then event[0].off event[1]
     @detach()
-    
+  
+  # detach: ->
+    # console.log 'detach'
+  

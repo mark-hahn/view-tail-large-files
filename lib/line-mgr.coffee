@@ -6,13 +6,14 @@
 module.exports =
 class LineMgr
   
-  constructor: (@lines, @reader, @chrW, @chrH) ->	  
+  constructor: (@fileView) ->
+    {@lines, @reader, @chrW, @chrH} = @fileView
     @topLineNumInDom = @botLineNumInDom = -1
     
   appendLine: (lineNum, text) ->
     top = (lineNum - @topLineNum) * @chrH 
-    lineNumW = @lineNumCharCount  * @chrW
-    lineW    = (@lineNumCharCount + @maxLineLen) * @chrW
+    lineNumW = @lineNumMaxCharCount  * @chrW
+    lineW    = (@lineNumMaxCharCount + @textMaxChrCount) * @chrW
     $line = $ """
       <div class="line", data-line="#{lineNum}" style="top:#{top}px; width:#{lineW}">
         <div class="line-num" style="width:#{lineNumW}px">#{lineNum+1}</div>
@@ -22,7 +23,7 @@ class LineMgr
     $line.find('.line-text').text text
     @lines.append $line
     
-  updateLinesInDom: (@topLineNum, @botLineNum, @lineNumCharCount, @maxLineLen) ->
+  updateLinesInDom: (@topLineNum, @botLineNum, @lineNumMaxCharCount, @textMaxChrCount) ->
     
     if @topLineNum > @botLineNumInDom or @botLineNum < @topLineNumInDom
       @lines.empty()
@@ -53,9 +54,9 @@ class LineMgr
           @lines.find('.line[data-line=' + lineNum + ']')
                 .css top: (lineNum - @topLineNum) * @chrH 
         
-    if @lastLineNumCharCount isnt @lineNumCharCount
-      @lines.find('.line-num').css width: @lineNumCharCount * @chrW
-    @lastLineNumCharCount = @lineNumCharCount
+    if @lastlineNumMaxCharCount isnt @lineNumMaxCharCount
+      @lines.find('.line-num').css width: @lineNumMaxCharCount * @chrW
+    @lastlineNumMaxCharCount = @lineNumMaxCharCount
 
     @topLineNumInDom = @topLineNum
     @botLineNumInDom = @botLineNum

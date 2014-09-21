@@ -27,9 +27,10 @@ Here are some ideas for new plug-ins. I will implement some of these myself but 
 
 bugs:
   going away from tab breaks tailing
-  tail missing on some (gigabyte.log is one)
+  tail bar missing
   crash opening pdf
-  fin-and-replace broken when vtlf enabled
+  find-and-replace broken when vtlf enabled
+  destroy isnt working
   
 # limitations
 

@@ -1,7 +1,9 @@
 @import "ui-variables";
 
 .view-tail-large-files {
-  position:         absolute; 
+  display:                -webkit-flex;
+  -webkit-flex-direction: column;
+  
   overflow-x:       scroll;
   overflow-y:       hidden;
   font-size:        @font-size;
@@ -11,41 +13,48 @@
   width:            100%;
   height:           100%;
   
-  .lines {
-    position: absolute;
-    overflow: hidden;
-    display:  none;
-    height:   100%;
+  .vtlf-inner {
+    -webkit-flex:  1;
+    -webkit-order: 1;
+    position: relative;
+    width:    100%;
     
-    .line {
-      position:absolute;
+    .lines {
+      position: absolute;
+      overflow: hidden;
+      display:  none;
+      height:   100%;
       
-      .line-num {
-        clear:both; 
-        float:left; 
-        text-align:right;
-        margin-right:10px;
-      }
-      .line-text {
-        white-space: pre; 
-        float:left;
+      .line {
+        position:absolute;
+        
+        .line-num {
+          clear:both; 
+          float:left; 
+          text-align:right;
+          margin-right:10px;
+        }
+        .line-text {
+          white-space: pre; 
+          float:left;
+        }
       }
     }
-  }
-  
-  .scrollbar {
-    position:         absolute;
-    background-color: @button-background-color;
-    width:            18px; 
-    height:           100%; 
-    top:              0; 
-    right:            0; 
     
-    .thumb {
-      position:         absolute;  
-      background-color: @button-background-color-selected;
-      width:            16px; 
-      left:              1px; 
+    .scrollbar {
+      position:         absolute;
+      background-color: @button-background-color;
+      width:            18px; 
+      height:           100%; 
+      top:              0; 
+      right:            0; 
+      
+      .thumb {
+        position:         absolute;  
+        background-color: @button-background-color-selected;
+        width:            16px; 
+        left:              1px; 
+      }
     }
   }
 }

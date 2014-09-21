@@ -10,11 +10,13 @@
     "atom": ">0.100.0"
   },
   "dependencies": {
-    "fs-plus": ">2.0.0",
-    "underscore": "^1.7.0",
+    "fs-plus":           ">2.0.0",
+    "underscore":        "^1.7.0",
     "underscore.string": "^2.3.3",
-    "vtlf-auto-open":   "mark-hahn/vtlf-auto-open#v0.1.0",
-    "vtlf-file-picker": "mark-hahn/vtlf-file-picker#v0.1.0",
-    "vtlf-tail":        "mark-hahn/vtlf-tail#v0.1.0"
+    "event-kit":         "^0.7.2",
+    
+    "vtlf-file-picker":  "mark-hahn/vtlf-file-picker#v0.1.0",
+    "vtlf-auto-open":    "mark-hahn/vtlf-auto-open#v0.1.0",
+    "vtlf-tail":         "mark-hahn/vtlf-tail#v0.1.0"
   }
 }
