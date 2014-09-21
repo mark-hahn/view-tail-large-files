@@ -47,9 +47,10 @@ class FileReader
             fs.close fd
             throw new Error "view-tail-large-files: Error reading " +
                             "#{filePath}, #{bytesReadTotal}, #{err.message}"
-                              
           bytesReadTotal += bytesRead
           bufEnd += bytesRead
+          
+          console.log 'read bytes', bytesReadTotal
           
           if @isDestroyed then fs.close fd; return	   
           
@@ -109,4 +110,6 @@ class FileReader
   destroy: -> 
     @isDestroyed = yes
     delete @index
+    console.log 'reader destroyed'
+
 

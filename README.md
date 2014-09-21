@@ -26,11 +26,10 @@ Here are some ideas for new plug-ins. I will implement some of these myself but 
 
 
 bugs:
+  tab doesn't refresh on switch
   going away from tab breaks tailing
-  tail bar missing
   crash opening pdf
   find-and-replace broken when vtlf enabled
-  destroy isnt working
   
 # limitations
 

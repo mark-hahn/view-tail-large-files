@@ -21,19 +21,19 @@ class FileView extends View
           @div style:"clear:both", '&nbsp'
 	             
 # API Events
-  onDidOpenFile:         (cb) => @fileViewEmitter.on 'did-open-file',          cb
-  onDidScroll:           (cb) => @fileViewEmitter.on 'did-scroll',             cb
-  onDidGetNewLines:      (cb) => @fileViewEmitter.on 'did-get-new-lines',      cb
   onWillOpenFile:        (cb) => @fileViewEmitter.on 'will-open-file',         cb
+  onDidOpenFile:         (cb) => @fileViewEmitter.on 'did-open-file',          cb
+  onDidGetNewLines:      (cb) => @fileViewEmitter.on 'did-get-new-lines',      cb
+  onDidScroll:           (cb) => @fileViewEmitter.on 'did-scroll',             cb
   onWillDestroyFileView: (cb) => @fileViewEmitter.on 'will-destroy-file-view', cb
 
-  initialize: (@viewOpener) ->
+  initialize: (@viewer) ->
     @pluginMgr = require './plugin-mgr'
     
 # Public API Vars
     @chrW = @chrH = null
     @topLineNum = @linesInView = @botLineNum = @lineCount = 0	 
-    @filePath        = @viewOpener.getFilePath()
+    @filePath        = @viewer.getFilePath()
     @globalEmitter   = @pluginMgr.globalEmitter
     @fileViewEmitter = new Emitter
 # End of public vars
@@ -45,7 +45,7 @@ class FileView extends View
     @events  = []
     @addEvents()
     
-    @pluginMgr.createPlugins @
+    @plugins = @pluginMgr.createPlugins @
     
     @okToOpenFile = yes
     @fileViewEmitter.emit 'will-open-file'
@@ -57,13 +57,14 @@ class FileView extends View
       progressView = new ProgressView @reader.getFileSize(), @
       @reader.buildIndex progressView, =>
         
-        # TODO kludge to fix font problem
-        @css fontFamily: 'Courier', fontSize: 14
-        
+        @css 
+          fontFamily: atom.config.get 'view-tail-large-files.fontFamily'
+          fontSize:   atom.config.get 'view-tail-large-files.fontSize'
         @chrW = @metricsTestSpan.width()  - 1	    
         @chrH = @metricsTestSpan.height() + 3
         @metricsTestDiv.remove()
-        @lineMgr   = new LineMgr    @
+        
+        @lineMgr = new LineMgr    @
         setTimeout =>
           @haveNewLines()
           progressView.destroy()
@@ -72,12 +73,16 @@ class FileView extends View
           @fileViewEmitter.emit 'did-open-file'
           
           @resizeSetInterval = setInterval =>
-            if @lastArea isnt @width() * @height()
+            w = @vtlf.width()
+            h = @vtlf.height()
+            if @lastArea isnt w * h
               @resize()
-              @lastArea = @width() * @height()
+              @lastArea = w * h
           , 300
         , 500
         
+    atom.workspaceView.command "pane:item-removed", (e, item) =>
+      if item is @viewer then @destroy()
   
   setScroll: (@topLineNum) ->
     if @lineCount <= @linesInView 
@@ -95,9 +100,11 @@ class FileView extends View
     @lineMgr.updateLinesInDom  @topLineNum, @botLineNum, @lineNumMaxCharCount, @textMaxChrCount
     @fileViewEmitter.emit 'did-scroll'
     
+  setScrollRelative: (ofs) -> @setScroll @topLineNum + ofs
+    
   resize: ->
     @lines.css width: @textMaxChrCount * @chrW
-    @linesInView = Math.floor @vtlf.height() / @chrH
+    @linesInView = Math.floor @vtlf.height() / @chrH	     
     @setScroll @topLineNum
       
   haveNewLines: ->
@@ -151,7 +158,7 @@ class FileView extends View
       
   addEvent: ($ele, types, func) ->
     $ele.on types, func
-    @events.push [$ele, func]
+    @events.push [$ele, types, func]
 
   addEvents: ->
     @addEvent @, 'view-tail-large-files:up',       => @keyEvent 'up'
@@ -167,14 +174,11 @@ class FileView extends View
       if @mouseIsDown or @mouseIsPaging then @mouseEvent e
 
   destroy: ->
-    console.log 'destroy'
-    @fileViewEmitter.emit 'will-destroy-file-view'
-    if @resizeSetInterval then clearSetInterval @resizeSetInterval
-    @reader.destroy()
-    @lineMgr.destroy()
-    for event of @events then event[0].off event[1]
     @detach()
-  
-  # detach: ->
-    # console.log 'detach'
+    @fileViewEmitter.emit 'will-destroy-file-view'
+    for event  in @events  then event[0].off event[1], event[2]
+    for plugin in @plugins then plugin.destroy?()
+    if @resizeSetInterval then clearInterval @resizeSetInterval
+    @reader?.destroy()
+    @lineMgr?.destroy()
   

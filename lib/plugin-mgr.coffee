@@ -12,17 +12,11 @@ class PluginMgr
   
   onDidOpenFile: (cb) -> @globalEmitter.on 'did-open-file', cb
   
-  error: (msg) ->
-    atom.confirm
-      message: 'View-Tail-Large-Files Error:\n\n'
-      detailedMessage: msg
-      buttons:['Close']
-  
   activate: (@vtlfState) -> 
     @globalEmitter = new Emitter
     
     @plugins = []
-    regexesStr = atom.config.get 'view-tail-large-files.selectPluginsByRegexOnFilePath'
+    regexesStr = atom.config.get 'view-tail-large-files.selectPluginsByFilePathRegex'
     regexCfg   = new RegExp '(^|[\\s;,])?([^\\s;,]+):([^\\s;,]*)([\\s;,]|$)', 'g'
     while (matches = regexCfg.exec regexesStr)
       regexStr = matches[3]

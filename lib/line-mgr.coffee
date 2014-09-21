@@ -61,3 +61,5 @@ class LineMgr
     @topLineNumInDom = @topLineNum
     @botLineNumInDom = @botLineNum
 
+  destroy: ->
+    
