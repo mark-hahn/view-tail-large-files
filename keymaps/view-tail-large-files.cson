@@ -1,4 +1,7 @@
 
+'.workspace':
+  'ctrl-alt-l': 'view-tail-large-files:open'
+
 '.vtlf-form':
   'tab':        'view-tail-large-files:focus-next'
   'shift-tab':  'view-tail-large-files:focus-previous'

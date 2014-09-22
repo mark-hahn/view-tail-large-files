@@ -11,7 +11,7 @@ class ViewTailLargeFiles
   activate: (@vtlfState) -> 
     # clear state for debugging
     # for key of @vtlfState then delete @vtlfState[key]  
-    console.log 'ViewTailLargeFiles activate @vtlfState', @vtlfState
+    # console.log 'ViewTailLargeFiles activate @vtlfState', @vtlfState
     
     # there is no "core" code other than the plugin manager
     # only singleton plugins like file-picker and auto-open run at activation

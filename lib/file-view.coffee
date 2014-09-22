@@ -9,16 +9,15 @@ class FileView extends View
   
   @content: ->
     @div class:'view-tail-large-files vtlf-form', tabindex:-1, =>
-      @div outlet:'vtlf', class:'vtlf-inner', =>
-        
-        @div outlet:'lines', class:'lines'
-            
+      @div outlet:'vtlfHoriz', class:'vtlf-horiz', =>
+        @div outlet:'linesOuter', class:'lines-outer', =>
+          @div outlet:'lines', class:'lines'
         @div outlet:'scrollbar', class:'scrollbar', =>
           @div outlet:'thumb', class:'thumb'
-              
-        @div outlet:'metricsTestDiv', style:'visibility:hidden', =>
-          @span outlet:'metricsTestSpan', 'W'
-          @div style:"clear:both", '&nbsp'
+            
+      @div outlet:'metricsTestDiv', style:'visibility:hidden', =>
+        @span outlet:'metricsTestSpan', 'W'
+        @div style:"clear:both", '&nbsp'
 	             
 # API Events
   onWillOpenFile:        (cb) => @fileViewEmitter.on 'will-open-file',         cb
@@ -56,11 +55,10 @@ class FileView extends View
       @reader      = new FileReader @
       progressView = new ProgressView @reader.getFileSize(), @
       @reader.buildIndex progressView, =>
-        
-        @css 
-          fontFamily: atom.config.get 'view-tail-large-files.fontFamily'
-          fontSize:   atom.config.get 'view-tail-large-files.fontSize'
-        @chrW = @metricsTestSpan.width()  - 1	    
+        fontFamily = atom.config.get 'view-tail-large-files.fontFamily'
+        fontSize   = atom.config.get 'view-tail-large-files.fontSize'
+        @metricsTestSpan.css {fontFamily, fontSize} 
+        @chrW = @metricsTestSpan.width()
         @chrH = @metricsTestSpan.height() + 3
         @metricsTestDiv.remove()
         
@@ -68,13 +66,14 @@ class FileView extends View
         setTimeout =>
           @haveNewLines()
           progressView.destroy()
+          @css {fontFamily, fontSize} 
           @lines.show()
           @focus()
           @fileViewEmitter.emit 'did-open-file'
           
           @resizeSetInterval = setInterval =>
-            w = @vtlf.width()
-            h = @vtlf.height()
+            w = @vtlfHoriz.width()
+            h = @vtlfHoriz.height()
             if @lastArea isnt w * h
               @resize()
               @lastArea = w * h
@@ -103,14 +102,14 @@ class FileView extends View
   setScrollRelative: (ofs) -> @setScroll @topLineNum + ofs
     
   resize: ->
-    @lines.css width: @textMaxChrCount * @chrW
-    @linesInView = Math.floor @vtlf.height() / @chrH	     
+    @lines.css width: (@lineNumMaxCharCount + @textMaxChrCount) * @chrW + 20
+    @linesInView = Math.floor (@vtlfHoriz.height()-16) / @chrH	     
     @setScroll @topLineNum
       
   haveNewLines: ->
-    oldLineCount = @lineCount
-    @lineCount   = @reader.getLineCount()
-    @textMaxChrCount  = @reader.getTextMaxChrCount()
+    oldLineCount         = @lineCount
+    @lineCount           = @reader.getLineCount()
+    @textMaxChrCount     = @reader.getTextMaxChrCount()
     @lineNumMaxCharCount = ('' + @lineCount).length + 2
     @fileViewEmitter.emit 'did-get-new-lines'
     @resize()
@@ -177,8 +176,8 @@ class FileView extends View
     @detach()
     @fileViewEmitter.emit 'will-destroy-file-view'
     for event  in @events  then event[0].off event[1], event[2]
-    for plugin in @plugins then plugin.destroy?()
-    if @resizeSetInterval then clearInterval @resizeSetInterval
+    for plugin in @plugins then plugin?.destroy?()
+    if @resizeSetInterval  then clearInterval @resizeSetInterval
     @reader?.destroy()
     @lineMgr?.destroy()
   

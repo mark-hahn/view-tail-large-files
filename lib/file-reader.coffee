@@ -49,8 +49,7 @@ class FileReader
                             "#{filePath}, #{bytesReadTotal}, #{err.message}"
           bytesReadTotal += bytesRead
           bufEnd += bytesRead
-          
-          console.log 'read bytes', bytesReadTotal
+          # console.log 'read bytes', bytesReadTotal
           
           if @isDestroyed then fs.close fd; return	   
           
@@ -97,6 +96,7 @@ class FileReader
     startOfs  = (index[start] & 0xffffffff) - Math.floor(index[start] / 0x100000000)
     endOfs    =  index[end-1] & 0xffffffff
     bufLen    = endOfs - startOfs
+    if bufLen is 0 then return []
     buf       = new Buffer bufLen
     fd = fs.openSync @filePath, 'r'
     fs.readSync fd, buf, 0, bufLen, startOfs
@@ -107,9 +107,5 @@ class FileReader
       stripCR = (if buf[lineEndOfs-startOfs-1] is 13 then 1 else 0)
       buf.toString 'utf8', lineBegOfs - startOfs, lineEndOfs - stripCR - startOfs
       
-  destroy: -> 
-    @isDestroyed = yes
-    delete @index
-    console.log 'reader destroyed'
-
+  destroy: -> @isDestroyed = yes
 

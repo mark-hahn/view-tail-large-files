@@ -9,7 +9,7 @@ class ProgressView extends View
     @div class:'progress editor-colors', \
          style:'margin:30px; width:100%; height:100px; box-shadow:none', =>
       @div class:'intro-hdr', \
-           style:'font-size:' + hdrFontSize + 'px; font-weight:bold; margin-bottom:30px'
+           style:'font-size:' + hdrFontSize + 'px; margin-bottom:30px'
       @div class:'line-count', \
            style:'clear:both; float:left; font-size:' + lineCntSize + 'px; 
                   width:200px; height:20px', 'Lines Indexed: 0'
@@ -23,8 +23,8 @@ class ProgressView extends View
   initialize: (fileSize, @view) ->
     @$progBar    = @find '.progress-bar-inner'
     @$lineCount  = @find '.line-count'
-    @find('.intro-hdr').text 'Opening ' + (fileSize / (1024*1024)).toFixed(1) + ' MB ' + 
-                             'file for viewing and tailing ...'
+    @find('.intro-hdr').text 'Opening ' + (Math.ceil fileSize / (1024*1024)) + ' MB ' + 
+                             'file using view-tail-large-files for read-only viewing ...'
     @view.append @
 
   setProgress: (progress, lineCount) ->
