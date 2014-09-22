@@ -6,7 +6,7 @@ View and tail files gigabytes long.  Great for logs.
 
 **Viewing a one-gigabyte file with ten million lines of text ...**
 
-  ![Animated GIF](https://github.com/mark-hahn/live-archive/blob/master/screenshots/gig.gif?raw=true)
+  ![Animated GIF](https://github.com/mark-hahn/view-tail-large-files/blob/master/screenshots/gig.gif?raw=true)
 
 ----
 
