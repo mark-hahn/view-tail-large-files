@@ -35,6 +35,7 @@ The only hard limit on file size is memory usage.  On my windows system I can op
 Anyone who can develop a package for Atom can easily do the same for VTLF.  It uses one simple fileView object to control the viewing.  It also uses the new event-kit system.  The to-do list includes documenting the api but for now there are samples.  
 
 Three plugins are provided in the base install.  These can be enabled/disabled in settings.
+
 - File-picker: It may seem strange to see that the file picker for opening a file can be disabled.  This is possible because there are alternatives like the next plugin below.  If the file-picker is disabled then the VTLF activation time goes from 360ms to 160ms.  I haven't yet studied the cause of the slowdown.  The OS file picker couldn't be used because it is hard-wired to the project tree.  See file-picker usage instructions below.
 
 - Auto-open:  This plugin causes files chosen from the project file tree to be be automatically opened by VTLF if the file is too large for Atom (> 2Mb).
