@@ -14,6 +14,7 @@
     "underscore":        "^1.7.0",
     "underscore.string": "^2.3.3",
     "event-kit":         "^0.7.2",
+    "emissary":          "^1.3.1",
     
     "vtlf-file-picker":  "mark-hahn/vtlf-file-picker",
     "vtlf-auto-open":    "mark-hahn/vtlf-auto-open",
