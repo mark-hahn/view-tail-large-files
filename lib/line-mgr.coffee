@@ -13,7 +13,7 @@ class LineMgr
   appendLine: (lineNum, text) ->
     top      = (lineNum - @topLineNum) * @chrH 
     lineNumW = @lineNumMaxCharCount    * @chrW
-    lineW    = (@lineNumMaxCharCount + @textMaxChrCount) * @chrW + 20
+    lineW    = (@lineNumMaxCharCount + @textMaxChrCount) * @chrW + 50
     $line = $ """
       <div class="line", data-line="#{lineNum}" style="top:#{top}px; width:#{lineW}px">
         <div class="line-num" style="width:#{lineNumW}px">#{lineNum+1}</div>

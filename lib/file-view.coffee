@@ -102,7 +102,7 @@ class FileView extends View
   setScrollRelative: (ofs) -> @setScroll @topLineNum + ofs
     
   resize: ->
-    @lines.css width: (@lineNumMaxCharCount + @textMaxChrCount) * @chrW + 20
+    @lines.css width: (@lineNumMaxCharCount + @textMaxChrCount) * @chrW + 50
     @linesInView = Math.floor (@vtlfHoriz.height()-16) / @chrH	     
     @setScroll @topLineNum
       
