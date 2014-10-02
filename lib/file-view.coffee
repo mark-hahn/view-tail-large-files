@@ -10,7 +10,7 @@ class FileView extends View
   @content: ->
     @div class:'view-tail-large-files vtlf-form', tabindex:-1, =>
       @div outlet:'vtlfHoriz', class:'vtlf-horiz', =>
-        @div outlet:'linesOuter', class:'lines-outer', =>
+        @div outlet:'linesOuter', class:'lines-outer editor-colors', =>
           @div outlet:'lines', class:'lines'
         @div outlet:'scrollbar', class:'scrollbar', =>
           @div outlet:'thumb', class:'thumb'
@@ -67,7 +67,7 @@ class FileView extends View
           @haveNewLines()
           progressView.destroy()
           @css {fontFamily, fontSize} 
-          @lines.show()
+          @lines.css display: 'inline-block'
           @focus()
           @fileViewEmitter.emit 'did-open-file'
           

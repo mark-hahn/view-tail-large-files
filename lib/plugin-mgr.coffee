@@ -8,7 +8,7 @@ path  = require 'path'
 _     = require "underscore"
 _.mixin require('underscore.string').exports()
 
-class PluginMgr
+class PluginMgr  
   
   onDidOpenFile: (cb) -> @globalEmitter.on 'did-open-file', cb
   

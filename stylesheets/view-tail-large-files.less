@@ -21,9 +21,10 @@
       flex-grow:   1;
       flex-shrink: 1;
       flex-basis: auto;
-      overflow-x: scroll;
+      overflow-x: auto;
       width:      100%;
       position:   relative;
+      display:    inline-block;
       
       .lines {
         position: absolute;
@@ -39,10 +40,12 @@
             float:left; 
             text-align:right;
             margin-right:10px;
+            display:    inline-block;
           }
           .line-text {
             white-space: pre; 
             float:left;
+            display:    inline-block;
           }
         }
       }
