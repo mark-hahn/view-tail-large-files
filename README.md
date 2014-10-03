@@ -40,7 +40,7 @@ Three plugins are provided in the base install.  These can be enabled/disabled i
 
 - Auto-open:  This plugin causes files chosen from the project file tree to be be automatically opened by VTLF if the file is too large for Atom (> 2Mb).
 
-- Tail: A file opened for tailing is initially scrolled to the bottom. New lines added to the open file appear at the bottom in real time.  A bar at the bottom indicates that tailing is happening.  If you manually scroll away from the bottom then tailing is paused until you scroll back down.  See next section for instructions to enable tailing.
+- Tail: A file opened for tailing is initially scrolled to the bottom. New lines added to the open file appear at the bottom in real time.  The last line number displayed on the bottom will be underlined to indicate that tailing is happening.  If you manually scroll away from the bottom then tailing is paused until you scroll back down.  See next section for instructions to enable tailing.
 
 # Settings ...
 - Font Family: This is selectable differently from the normal settings because viewing files is different than editing source code.  The default is Courier.

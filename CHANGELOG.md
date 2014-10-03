@@ -1,6 +1,10 @@
 
+## 0.1.4 
+
+  - Updated readme re underline tail indicator
+  - fixed vtlf-tail version in package.json
+
 ## 0.1.3
-  - changed tailing indicator to underlined line num
   - added theme coloring to file view
   - fixed long line wrapping
 
