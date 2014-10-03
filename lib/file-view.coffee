@@ -135,14 +135,13 @@ class FileView extends View
           @setScroll (@topLineNum += pageOfs)
           @mouseIsPaging = yes
           setTimeout =>
-            interval = setInterval =>
-              if @mouseIsPaging 
-                @setScroll (@topLineNum += pageOfs)
-              else
-                clearInterval interval
+            @pagingInterval = setInterval =>
+              if @mouseIsPaging then @setScroll (@topLineNum += pageOfs)
+              else clearInterval @pagingInterval; @pagingInterval = null
             , 100
           , 250
       when 'mousemove'
+        if not @mouseIsDown or e.which is 0 then @mouseIsDown = no; return
         thumbTravel = @height() - @thumb.height() - 20
         mouseDelta  = e.pageY - @initialMouseY
         thumbOfs    = @initialThumbY + mouseDelta
@@ -153,8 +152,6 @@ class FileView extends View
       when 'mousewheel' 
         @setScroll (@topLineNum -= Math.ceil(e.originalEvent.wheelDelta / @chrH))
         
-    false
-      
   addEvent: ($ele, types, func) ->
     $ele.on types, func
     @events.push [$ele, types, func]
@@ -168,9 +165,8 @@ class FileView extends View
     @addEvent @, 'view-tail-large-files:bottom',   => @keyEvent 'bottom'
 
     @addEvent @,          'mousewheel',        (e) => @mouseEvent e
-    @addEvent @scrollbar, 'mousedown',         (e) => @mouseEvent e
-    @addEvent $(window),  'mousemove mouseup', (e) => 
-      if @mouseIsDown or @mouseIsPaging then @mouseEvent e
+    @addEvent @scrollbar, 'mousedown mouseup', (e) => @mouseEvent e
+    @addEvent $(window),  'mousemove mouseup', (e) => @mouseEvent e
 
   destroy: ->
     @detach()
@@ -178,6 +174,7 @@ class FileView extends View
     for event  in @events  then event[0].off event[1], event[2]
     for plugin in @plugins then plugin?.destroy?()
     if @resizeSetInterval  then clearInterval @resizeSetInterval
+    if @pagingInterval     then clearInterval @pagingInterval
     @reader?.destroy()
     @lineMgr?.destroy()
   
