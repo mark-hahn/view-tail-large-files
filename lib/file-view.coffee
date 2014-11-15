@@ -23,6 +23,7 @@ class FileView extends View
   onWillOpenFile:        (cb) => @fileViewEmitter.on 'will-open-file',         cb
   onDidOpenFile:         (cb) => @fileViewEmitter.on 'did-open-file',          cb
   onDidGetNewLines:      (cb) => @fileViewEmitter.on 'did-get-new-lines',      cb
+  onWillScroll:          (cb) => @fileViewEmitter.on 'will-scroll',            cb
   onDidScroll:           (cb) => @fileViewEmitter.on 'did-scroll',             cb
   onWillDestroyFileView: (cb) => @fileViewEmitter.on 'will-destroy-file-view', cb
 
@@ -32,7 +33,7 @@ class FileView extends View
 # Public API Vars
     @chrW = @chrH = null
     @topLineNum = @linesInView = @botLineNum = @lineCount = 0	 
-    @filePath        = @viewer.getFilePath()
+    @filePath        = @viewer.getPath()
     @globalEmitter   = @pluginMgr.globalEmitter
     @fileViewEmitter = new Emitter
 # End of public vars
@@ -84,6 +85,7 @@ class FileView extends View
       if item is @viewer then @destroy()
   
   setScroll: (@topLineNum) ->
+    @fileViewEmitter.emit 'will-scroll'
     if @lineCount <= @linesInView 
       @scrollbar.hide()
       @topLineNum = 0

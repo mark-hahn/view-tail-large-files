@@ -17,7 +17,7 @@ class LineMgr
     $line = $ """
       <div class="line", data-line="#{lineNum}" style="top:#{top}px; width:#{lineW}px">
         <div class="line-num" style="width:#{lineNumW}px">#{lineNum+1}</div>
-        <div class="line-text"></div>
+        <div class="line-text" style="left:#{lineNumW+30}px"></div>
       </div>
     """
     $line.find('.line-text').text text

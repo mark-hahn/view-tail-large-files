@@ -13,7 +13,7 @@ class Viewer
   constructor: (@filePath) ->
     @FileView = require './file-view'
     
-  getFilePath: -> @filePath
+  getPath: -> @filePath
   
   # these are required for this to be an Atom opener
   getViewClass: -> @FileView
