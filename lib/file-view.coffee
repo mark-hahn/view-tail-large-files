@@ -63,7 +63,7 @@ class FileView extends View
         @chrH = @metricsTestSpan.height() + 3
         @metricsTestDiv.remove()
         
-        @lineMgr = new LineMgr    @
+        @lineMgr = new LineMgr @
         setTimeout =>
           @haveNewLines()
           progressView.destroy()
@@ -170,8 +170,14 @@ class FileView extends View
     @addEvent @scrollbar, 'mousedown mouseup', (e) => @mouseEvent e
     @addEvent $(window),  'mousemove mouseup', (e) => @mouseEvent e
 
+  close: ->
+    for pane in atom.workspace.getPanes()
+      for paneItem in pane.getItems()
+        if paneItem is @viewer
+          pane.destroyItem paneItem
+          return
+      
   destroy: ->
-    @detach()
     @fileViewEmitter.emit 'will-destroy-file-view'
     for event  in @events  then event[0].off event[1], event[2]
     for plugin in @plugins then plugin?.destroy?()
@@ -179,4 +185,3 @@ class FileView extends View
     if @pagingInterval     then clearInterval @pagingInterval
     @reader?.destroy()
     @lineMgr?.destroy()
-  

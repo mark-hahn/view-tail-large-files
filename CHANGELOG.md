@@ -1,10 +1,11 @@
 
-## 0.1.5
+## 0.1.7  1/28/2015
+  - Added support for file deletion
 
+## 0.1.5
   - Fixed line display
 
 ## 0.1.4 
-
   - Updated readme re underline tail indicator
   - fixed vtlf-tail version in package.json
 

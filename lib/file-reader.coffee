@@ -32,7 +32,18 @@ class FileReader
      
     fs.open filePath, 'r', (err, fd) =>
       if err 
-        throw new Error "view-tail-large-files: Error opening #{filePath}, #{err.message}"
+        if err.code is 'ENOENT'
+          @fileView.close()
+          console.log 'buildIndex: file missing, retrying every second for 10 mins'
+          start = Date.now()
+          fschkInterval = setInterval ->
+            if (exists = fs.existsSync(filePath)) or (Date.now() - start) > 10*60*1000
+              clearInterval fschkInterval
+              if exists then finishedCB 'reload' else finishedCB 'abort'
+          , 1000
+          return
+        else
+          throw new Error "view-tail-large-files: Error opening #{filePath}, #{err.message}", err
       
       if @isDestroyed then fs.close fd; return
       
@@ -71,7 +82,7 @@ class FileReader
             if bufPos is 0 
               console.log 'A line is too long (more than ' + bufSize + 'bytes).  ' +
                           'The file will be truncated at line ' + index.length + '.'
-              finishedCB()
+              finishedCB 'ok'
               fs.close fd
               return
             progressView?.setProgress bytesReadTotal/fileSize, index.length
@@ -83,7 +94,7 @@ class FileReader
               index.push (fileSize - @lastFilePos) * 0x100000000 + fileSize
               @textMaxChrCount = Math.max lineText.length, @textMaxChrCount
             progressView?.setProgress 1, index.length, @textMaxChrCount
-            finishedCB()
+            finishedCB 'ok'
             fs.close fd
             
   getLines: (start, end) ->
