@@ -1,4 +1,7 @@
 
+## 0.1.8  1/29/2015
+  - Added support for copying text
+
 ## 0.1.7  1/28/2015
   - Added support for file deletion
 

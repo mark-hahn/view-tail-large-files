@@ -24,6 +24,10 @@ Use the default key binding of `ctrl-alt-L` (`view-tail-large-files:open`) to se
 
 See the plugins section below for details of other features like tailing files.
 
+# Copying Text
+
+When you click anywhere in the text and drag the mouse, text will be selected and immediately copied to the clipboard.  Only lines can be selected at this time.
+
 # Performance
 
 A ram-based index of lines in the file is created when the file is opened and appended to as the file grows.  The index memory requirements are about 10% of the file size.  So a 100 MByte file requires abount 10 MBytes of memory. The index is created as fast as the file can be read, which is usually about 1 second per 50 MBytes which is 20 seconds for a gigabyte. The index allows true random-access to any line so jumping to a specific location appears to be instantaneous and scrolling is fast.

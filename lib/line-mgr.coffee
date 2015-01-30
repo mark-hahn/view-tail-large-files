@@ -8,7 +8,9 @@ class LineMgr
   
   constructor: (@fileView) ->
     {@lines, @reader, @chrW, @chrH} = @fileView
+    @subs = []
     @topLineNumInDom = @botLineNumInDom = -1
+    @setEvents()
     
   appendLine: (lineNum, text) ->
     top      = (lineNum - @topLineNum) * @chrH 
@@ -60,6 +62,62 @@ class LineMgr
 
     @topLineNumInDom = @topLineNum
     @botLineNumInDom = @botLineNum
+    
+  clearSelection: -> @fileView.find('.line').removeClass 'line-selected'
+  
+  startSelecting: (e) ->
+    @selecting = yes
+    @selectOrigin = +$(e.target).closest('.line').attr 'data-line'
+    @extendSelection e
+    
+  extendSelection: (e) ->
+    if not @selectOrigin? then return
+    $line   = $(e.target).closest '.line'
+    lineNum = +$line.attr 'data-line'
+    if lineNum < @selectOrigin
+      startLine = lineNum
+      endLine   = @selectOrigin
+    else
+      startLine = @selectOrigin
+      endLine   = lineNum
+    @clearSelection()
+    @fileView.find('.line').each (idx, ele) =>
+      $line = $ ele
+      if startLine <= +$line.attr('data-line') <= endLine
+        $line.addClass 'line-selected'
+    @copy()
+        
+  mouseDown: (e) ->
+    @mouseIsDown = yes
+    if e.shiftKey then @extendSelection e
+    else @clearSelection()
+    false
+  
+  mouseMove: (e) ->
+    if @mouseIsDown
+      if not @selecting then @startSelecting e
+      else @extendSelection e
+    false
+
+  mouseUp: ->
+    @selecting = @mouseIsDown  = no
+    
+  copy: ->
+    textArr = []
+    @fileView.find('.line-selected').each (idx, ele) =>
+      $line = $ ele
+      lineNum = +$line.attr 'data-line'
+      textArr.push [lineNum, $line.find('.line-text').text()]
+    if textArr.length is 0 then return
+    textArr.sort()
+    txt = ''
+    for line in textArr then txt += line[1]
+    atom.clipboard.write txt
+    
+  setEvents: ->
+    @subs.push @fileView.on 'mousedown', '.line', (e) => @mouseDown e
+    @subs.push @fileView.on 'mousemove', '.line', (e) => @mouseMove e
+    @subs.push @fileView.on 'mouseup',   '.line',     => @mouseUp()
 
   destroy: ->
-    
+    for sub in @subs then sub.off()

@@ -1,12 +1,11 @@
 @import "ui-variables";
+@import "syntax-variables";
 
 .view-tail-large-files {
   display:        flex;
   flex-direction: column;
   overflow:       hidden;
   
-  // font-size:        @font-size;
-  // font-family:      @font-family;
   color:            @syntax-text-color;
   background-color: @syntax-background-color;
 
@@ -68,6 +67,9 @@
         left:              1px; 
       }
     }
+  }
+  .line-selected .line-text {
+    background-color: @syntax-selection-color;
   }
 }
 
