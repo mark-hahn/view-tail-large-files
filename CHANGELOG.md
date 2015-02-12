@@ -1,4 +1,7 @@
 
+## 0.1.10 2/12/2015
+  - updated vtlf-file-picker dependencies
+
 ## 0.1.8  1/29/2015
   - Added support for copying text
 

@@ -1,7 +1,7 @@
 {
   "name": "view-tail-large-files",
   "main": "./lib/view-tail-large-files",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "View and tail files of any size.",
   "activationEvents": [],
   "repository": "https://github.com/mark-hahn/view-tail-large-files",
@@ -16,7 +16,7 @@
     "event-kit":         "^0.7.2",
     "emissary":          "^1.3.1",
     
-    "vtlf-file-picker":  "mark-hahn/vtlf-file-picker#0.1.1",
+    "vtlf-file-picker":  "mark-hahn/vtlf-file-picker#0.1.3",
     "vtlf-auto-open":    "mark-hahn/vtlf-auto-open#0.1.0",
     "vtlf-tail":         "mark-hahn/vtlf-tail#0.1.3"
   }
