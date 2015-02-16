@@ -1,5 +1,5 @@
 
-'.workspace':
+'.atom-workspace':
   'ctrl-alt-l': 'view-tail-large-files:open'
 
 '.vtlf-form':

@@ -1,4 +1,7 @@
 
+## 0.1.11 2/16/2015
+  - use atom-workspace in keymap
+
 ## 0.1.10 2/12/2015
   - updated vtlf-file-picker dependencies
 
