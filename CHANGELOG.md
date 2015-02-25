@@ -1,4 +1,7 @@
 
+## 0.1.13 2/24/2015
+  - blocked user selection in css
+
 ## 0.1.11 2/16/2015
   - use atom-workspace in keymap
 

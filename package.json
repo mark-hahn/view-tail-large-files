@@ -1,7 +1,7 @@
 {
   "name": "view-tail-large-files",
   "main": "./lib/view-tail-large-files",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "View and tail files of any size.",
   "activationEvents": [],
   "repository": "https://github.com/mark-hahn/view-tail-large-files",
