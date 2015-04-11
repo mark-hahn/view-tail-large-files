@@ -1,4 +1,7 @@
 
+## 0.1.14 4/10/2015
+  - fixed error msg when missing regex in settings
+  
 ## 0.1.13 2/24/2015
   - blocked user selection in css
   - fixed open keybinding

@@ -30,7 +30,7 @@ class PluginMgr
             console.log "view-tail-large-files: Error loading plugin #{name}; #{e.message}"
             continue
           if PluginClass.type isnt 'singleton'
-            console.log "view-tail-large-files: Regex missing for #{name}; #{e.message}"
+            console.log "view-tail-large-files: Regex missing for #{name}"
             continue
           pluginState = (@vtlfState[name] ?= {})
           singletonInstance = new PluginClass @, pluginState, __dirname + '/'
