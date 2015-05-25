@@ -1,4 +1,4 @@
-{View}     = require 'atom'
+{View}     = require 'atom-space-pen-views'
 
 hdrFontSize = 16
 lineCntSize = 14

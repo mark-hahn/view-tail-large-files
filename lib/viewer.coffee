@@ -1,14 +1,10 @@
 
 # viewer
 
-{Emitter} = require 'emissary'
-
 path = require 'path'
 
 module.exports =
 class Viewer
-  
-  Emitter.includeInto @
   
   constructor: (@filePath) ->
     @FileView = require './file-view'

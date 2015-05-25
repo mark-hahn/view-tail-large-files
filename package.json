@@ -1,7 +1,7 @@
 {
   "name": "view-tail-large-files",
   "main": "./lib/view-tail-large-files",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "View and tail files of any size.",
   "activationEvents": [],
   "repository": "https://github.com/mark-hahn/view-tail-large-files",
@@ -10,14 +10,14 @@
     "atom": ">0.170.0"
   },
   "dependencies": {
-    "fs-plus":           ">2.0.0",
-    "underscore":        "^1.7.0",
+    "atom-space-pen-views": "^2.0.5",
+    "event-kit": "^0.7.2",
+    "fs-plus": "^2.8.1",
+    "jquery": "^2.1.4",
+    "underscore": "^1.7.0",
     "underscore.string": "^2.3.3",
-    "event-kit":         "^0.7.2",
-    "emissary":          "^1.3.1",
-    
-    "vtlf-file-picker":  "*",
-    "vtlf-auto-open":    "*",
-    "vtlf-tail":         "*"
+    "vtlf-auto-open": "*",
+    "vtlf-file-picker": "*",
+    "vtlf-tail": "*"
   }
 }

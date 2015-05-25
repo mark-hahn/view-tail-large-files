@@ -1,4 +1,7 @@
 
+## 0.1.15 5/25/2015
+  - fixed deprecations
+  
 ## 0.1.14 4/10/2015
   - fixed error msg when missing regex in settings
   

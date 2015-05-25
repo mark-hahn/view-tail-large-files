@@ -1,7 +1,7 @@
 
 # lib\file-reader.coffee
 
-fs        = require 'fs-plus'
+fs = require 'fs-plus'
 pluginMgr = null
 
 bufSize = 32768

@@ -1,7 +1,7 @@
 
 # lib/line-mgr.coffee
 
-{$} = require 'atom'
+$ = require 'jquery'
 
 module.exports =
 class LineMgr

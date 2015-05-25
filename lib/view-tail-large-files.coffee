@@ -3,10 +3,17 @@
 
 class ViewTailLargeFiles
   
-  configDefaults:
-    fontFamily: 'Courier'
-    fontSize: 14
-    selectPluginsByFilePathRegex: 'file-picker: auto-open: tail:\\.log$'
+  config:
+    fontFamily:
+      type: 'string'
+      default: 'Courier'
+    fontSize:
+      type: 'integer'
+      default: 14
+      minimum: 4
+    selectPluginsByFilePathRegex:
+      type: 'string'
+      default: 'file-picker: auto-open: tail:\\.log$'
   
   activate: (@vtlfState) -> 
     # clear state for debugging

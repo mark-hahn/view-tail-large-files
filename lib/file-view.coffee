@@ -1,7 +1,8 @@
 
 # lib\file-view.coffee
 
-{$, View} = require 'atom'
+$ = require 'jquery'
+{View} = require 'atom-space-pen-views'
 {Emitter} = require 'event-kit'
 
 module.exports =
@@ -81,7 +82,7 @@ class FileView extends View
           , 300
         , 500
         
-    atom.workspaceView.command "pane:item-removed", (e, item) =>
+    @sub = atom.commands.add 'atom-workspace', 'pane:item-removed': =>
       if item is @viewer then @destroy()
   
   setScroll: (@topLineNum) ->
@@ -185,3 +186,4 @@ class FileView extends View
     if @pagingInterval     then clearInterval @pagingInterval
     @reader?.destroy()
     @lineMgr?.destroy()
+    @sub.dispose()
