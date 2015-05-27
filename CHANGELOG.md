@@ -1,4 +1,7 @@
 
+## 0.1.16 5/27/2015
+  - fixed deprecations
+  
 ## 0.1.15 5/25/2015
   - fixed deprecations
   
