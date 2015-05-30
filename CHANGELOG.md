@@ -1,4 +1,7 @@
 
+## 0.1.17 5/30/2015
+  - fixed exception on pane switch
+  
 ## 0.1.16 5/27/2015
   - fixed deprecations
   

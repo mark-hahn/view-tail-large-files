@@ -82,8 +82,8 @@ class FileView extends View
           , 300
         , 500
         
-    @sub = atom.commands.add 'atom-workspace', 'pane:item-removed': =>
-      if item is @viewer then @destroy()
+    @sub = atom.commands.add 'atom-workspace', 'pane:item-removed': (e) =>
+      if e.item is @viewer then @destroy()
   
   setScroll: (@topLineNum) ->
     @fileViewEmitter.emit 'will-scroll'
