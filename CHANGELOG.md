@@ -1,3 +1,5 @@
+## 0.2.0 6/22/2015
+  - **This package is deprecated since Atom supports larger files now.  The tail functionality will be implemented in a new package by itself ASAP.**
 
 ## 0.1.17 5/30/2015
   - fixed exception on pane switch

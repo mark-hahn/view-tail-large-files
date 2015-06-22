@@ -1,8 +1,8 @@
 {
   "name": "view-tail-large-files",
   "main": "./lib/view-tail-large-files",
-  "version": "0.1.17",
-  "description": "View and tail files of any size.",
+  "version": "0.2.0",
+  "description": "This package is deprecated since Atom supports larger files now.",
   "repository": "https://github.com/mark-hahn/view-tail-large-files",
   "license": "MIT",
   "engines": {

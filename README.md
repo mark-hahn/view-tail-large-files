@@ -1,5 +1,7 @@
 # view-tail-large-files Atom editor package
 
+**This package is deprecated since Atom supports larger files now.  The tail functionality will be implemented in a new package by itself ASAP.**
+
 View and tail files gigabytes long.  Great for logs.
 
 ----
